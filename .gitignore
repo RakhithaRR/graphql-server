@@ -1,0 +1,12 @@
+# Ignore everything in this directory
+target
+.classpath
+.settings
+.project
+*.i??
+.idea
+.factorypath
+*.h2.db
+*.mv.db
+*.DS_Store
+*.war

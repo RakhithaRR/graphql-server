@@ -1,0 +1,9 @@
+type Query {
+    api: API
+}
+
+type API {
+    name: String
+    version: String
+    context: String
+}
