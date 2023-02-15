@@ -1,9 +1,55 @@
 type Query {
-    api: API
+    getAPI: API
 }
 
 type API {
+    id: ID!
     name: String
     version: String
     context: String
+    provider: String
+    organization: String
+    description: String
+    type: String
+    transports: [String]
+    hasThumbnail: Boolean
+    state: String
+    tags: [String]
+    categories: [String]
+    sdk: [String]
+    policies: [String]
+    lifeCycleStatus: String
+    additionalProperties: [String]
+    createdTime: String
+    lastUpdatedTime: String
+    operations: [Operation]
+    apiUsagePolicy: String
+    monetization: String
+    businessInformation: String
+    revision: String
+    deployments: [String]
+    documents: [String]
+    endpointConfig: String
 }
+
+type Operation {
+    target: String
+    verb: String
+    scopes: [String]
+    authTypeEnabled: Boolean
+    operationPolicy: OperationPolicies
+}
+
+type OperationPolicies {
+    request: [OperationPolicy]
+    response: [OperationPolicy]
+    fault: [OperationPolicy]
+}
+
+type OperationPolicy {
+    policyId: String
+    policyName: String
+    policyVersion: String
+    parameters: String
+}
+

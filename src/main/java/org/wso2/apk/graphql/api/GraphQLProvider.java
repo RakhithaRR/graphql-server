@@ -24,6 +24,6 @@ public class GraphQLProvider {
 
     private TypeRuntimeWiring.Builder queryAPI() {
         return TypeRuntimeWiring.newTypeWiring("Query")
-                .dataFetcher("api", new APIFetcher().getAPIs());
+                .dataFetcher("getAPI", new APIFetcher().getAPIs());
     }
 }
