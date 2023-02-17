@@ -18,17 +18,17 @@ type API {
     categories: [String]
     sdk: [String]
     policies: [String]
-    lifeCycleStatus: String
-    additionalProperties: [String]
+    lifecycleStatus: String
+    additionalProperties: String
     createdTime: String
     lastUpdatedTime: String
     operations: [Operation]
     apiUsagePolicy: String
     monetization: String
-    businessInformation: String
-    revision: String
-    deployments: [String]
-    documents: [String]
+    businessInformation: BusinessInformation
+    revision: Revision
+    deployments: [Deployment]
+    documents: [Document]
     endpointConfig: String
 }
 
@@ -37,7 +37,8 @@ type Operation {
     verb: String
     scopes: [String]
     authTypeEnabled: Boolean
-    operationPolicy: OperationPolicies
+    operationPolicies: OperationPolicies
+    usagePlan: String
 }
 
 type OperationPolicies {
@@ -53,3 +54,36 @@ type OperationPolicy {
     parameters: String
 }
 
+type BusinessInformation {
+    businessOwner: String
+    businessOwnerEmail: String
+    technicalOwner: String
+    technicalOwnerEmail: String
+}
+
+type Revision {
+    id: String
+    displayName: String
+    description: String
+    createdTime: String
+}
+
+type Deployment {
+    name: String
+    revisionId: String
+    vhost: String
+    deployedTime: String
+}
+
+type Document {
+    documentId: String
+    name: String
+    type: String
+    summary: String
+    sourceType: String
+    sourceUrl: String
+    otherTypeName: String
+    inlineContent: String
+    visibility: String
+    fileName: String
+}

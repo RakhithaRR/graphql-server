@@ -7,6 +7,7 @@ public class OperationDTO {
     private String verb;
     private Boolean authTypeEnabled;
     private List<String> scopes;
+    private String usagePlan;
 
     private OperationPoliciesDTO operationPolicies;
 
@@ -48,5 +49,13 @@ public class OperationDTO {
 
     public void setOperationPolicies(OperationPoliciesDTO operationPolicies) {
         this.operationPolicies = operationPolicies;
+    }
+
+    public String getUsagePlan() {
+        return usagePlan;
+    }
+
+    public void setUsagePlan(String usagePlan) {
+        this.usagePlan = usagePlan;
     }
 }
