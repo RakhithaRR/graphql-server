@@ -25,6 +25,7 @@ public class APIDataType {
     private Revision revision;
     private List<Deployment> deployments;
     private List<DocumentDTO> documents;
+    private String definition;
 
     public String getId() {
         return id;
@@ -184,5 +185,13 @@ public class APIDataType {
 
     public void setDocuments(List<DocumentDTO> documents) {
         this.documents = documents;
+    }
+
+    public String getDefinition() {
+        return definition;
+    }
+
+    public void setDefinition(String definition) {
+        this.definition = definition;
     }
 }

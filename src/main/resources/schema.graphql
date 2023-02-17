@@ -1,5 +1,11 @@
 type Query {
-    getAPI: API
+    getAPIs: APIList
+    getAPI(id: String!): API
+}
+
+type APIList {
+    count: Int
+    list: [API]
 }
 
 type API {
@@ -30,6 +36,7 @@ type API {
     deployments: [Deployment]
     documents: [Document]
     endpointConfig: String
+    definition: String
 }
 
 type Operation {

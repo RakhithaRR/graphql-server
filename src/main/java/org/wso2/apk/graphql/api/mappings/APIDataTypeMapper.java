@@ -1,5 +1,6 @@
 package org.wso2.apk.graphql.api.mappings;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.wso2.apk.graphql.api.datatypes.APIDataType;
 import org.wso2.apk.graphql.api.models.*;
@@ -12,6 +13,8 @@ import org.wso2.carbon.apimgt.impl.definitions.OASParserUtil;
 import org.wso2.carbon.apimgt.impl.utils.OperationPolicyComparator;
 import org.wso2.carbon.apimgt.rest.api.common.RestApiCommonUtil;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -48,6 +51,7 @@ public class APIDataTypeMapper {
         apiDataType.setCategories(getCategoryNames(api.getApiCategories()));
         apiDataType.setLifecycleStatus(api.getStatus());
         apiDataType.setAdditionalProperties(api.getAdditionalProperties().toJSONString());
+        apiDataType.setDefinition(getAPIDefinition(api.getUuid()));
         apiDataType.setBusinessInformation(mapBusinessInformation(api));
         getRevisionDetails(apiDataType, api.getUuid());
         apiDataType.setDocuments(getDocumentationDetails(api.getUuid()));
@@ -184,22 +188,24 @@ public class APIDataTypeMapper {
         } catch (APIManagementException e) {
             // todo: handle exception
         }
-        APIRevision deployedRevision = apiDeployedRevisions.get(0);
-        Revision revision = new Revision();
-        revision.setId(deployedRevision.getRevisionUUID());
-        revision.setCreatedTime(parseStringToDate(deployedRevision.getCreatedTime()).toString());
-        revision.setDisplayName("Revision " + deployedRevision.getId());
-        revision.setDescription(deployedRevision.getDescription());
+        if (!apiDeployedRevisions.isEmpty()) {
+            APIRevision deployedRevision = apiDeployedRevisions.get(0);
+            Revision revision = new Revision();
+            revision.setId(deployedRevision.getRevisionUUID());
+            revision.setCreatedTime(parseStringToDate(deployedRevision.getCreatedTime()).toString());
+            revision.setDisplayName("Revision " + deployedRevision.getId());
+            revision.setDescription(deployedRevision.getDescription());
 
-        List<Deployment> revisionDeployments = new ArrayList<>();
-        if (deployedRevision.getApiRevisionDeploymentList() != null) {
-            for (APIRevisionDeployment apiRevisionDeployment : deployedRevision.getApiRevisionDeploymentList()) {
-                revisionDeployments.add(fromAPIRevisionDeploymentToDeployment(apiRevisionDeployment));
+            List<Deployment> revisionDeployments = new ArrayList<>();
+            if (deployedRevision.getApiRevisionDeploymentList() != null) {
+                for (APIRevisionDeployment apiRevisionDeployment : deployedRevision.getApiRevisionDeploymentList()) {
+                    revisionDeployments.add(fromAPIRevisionDeploymentToDeployment(apiRevisionDeployment));
+                }
             }
-        }
 
-        apiDataType.setRevision(revision);
-        apiDataType.setDeployments(revisionDeployments);
+            apiDataType.setRevision(revision);
+            apiDataType.setDeployments(revisionDeployments);
+        }
     }
 
     private static Deployment fromAPIRevisionDeploymentToDeployment(
@@ -239,15 +245,19 @@ public class APIDataTypeMapper {
                 documentDTO.setOtherTypeName(documentation.getOtherTypeName());
                 documentDTO.setSourceUrl(documentation.getSourceUrl());
                 documentDTO.setVisibility(documentation.getVisibility().toString());
+
+                DocumentationContent documentationContent = apiProvider
+                        .getDocumentationContent(apiId, documentation.getId(), "carbon.super");
                 if (Documentation.DocumentSourceType.INLINE.equals(documentation.getSourceType())
                         || Documentation.DocumentSourceType.MARKDOWN.equals(documentation.getSourceType())) {
-                    DocumentationContent documentationContent = apiProvider
-                            .getDocumentationContent(apiId, documentation.getId(), "carbon.super");
                     if (documentationContent != null) {
                         documentDTO.setInlineContent(documentationContent.getTextContent());
                     }
                 }
-                documentDTO.setFileName(documentation.getFilePath());
+                if (Documentation.DocumentSourceType.FILE.equals(documentation.getSourceType())
+                        && documentationContent != null) {
+                    documentDTO.setFileName(getBase64EncodedDocument(documentationContent));
+                }
                 documentDTOList.add(documentDTO);
             }
         } catch (APIManagementException e) {
@@ -255,5 +265,31 @@ public class APIDataTypeMapper {
             // todo: handle exception
         }
         return documentDTOList;
+    }
+
+    private static String getBase64EncodedDocument(DocumentationContent documentationContent) {
+        InputStream contentStream = documentationContent.getResourceFile().getContent();
+        String base64EncodedDocument = "";
+        if (contentStream != null) {
+            try {
+                byte[] bytes = IOUtils.toByteArray(contentStream);
+                base64EncodedDocument = Base64.getEncoder().encodeToString(bytes);
+                return base64EncodedDocument;
+            } catch (IOException e) {
+                return "";
+            }
+        }
+        return base64EncodedDocument;
+    }
+
+    private static String getAPIDefinition(String apiId) {
+        String apiDefinition = "";
+        try {
+            APIProvider apiProvider = RestApiCommonUtil.getProvider("admin");
+            apiDefinition = apiProvider.getOpenAPIDefinition(apiId, ORGANIZATION);
+        } catch (APIManagementException e) {
+            return apiDefinition;
+        }
+        return apiDefinition;
     }
 }

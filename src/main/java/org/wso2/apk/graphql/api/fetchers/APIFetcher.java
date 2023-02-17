@@ -8,4 +8,8 @@ public class APIFetcher {
     public DataFetcher getAPIs() {
         return dataFetchingEnvironment -> APIService.getAPIs();
     }
+
+    public DataFetcher getAPI() {
+        return dataFetchingEnvironment -> APIService.getAPI(dataFetchingEnvironment.getArgument("id"));
+    }
 }
