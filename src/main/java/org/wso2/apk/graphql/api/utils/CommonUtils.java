@@ -35,6 +35,7 @@ public class CommonUtils {
                     tenant.setAdminName(adminName);
                 } else {
                     tenantsArray.set(i, tenantManager.getTenant(tenant.getId()));
+                    tenantsArray.get(i).setAdminName(getTenantAdminUserName(tenant.getDomain()));
                 }
             }
         } catch (UserStoreException e) {

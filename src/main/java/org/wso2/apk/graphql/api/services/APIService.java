@@ -18,23 +18,24 @@ public class APIService {
     public static APIListDTO getAPIs() {
         List<Tenant> organizations = CommonUtils.loadTenants();
         APIListDTO apiListDTO = new APIListDTO();
+        List<APIDataType> apiList = new ArrayList<>();
         for (Tenant organization : organizations) {
             String adminUsername = organization.getAdminName();
             String organizationName = organization.getDomain();
             try {
-                List<APIDataType> apiList = new ArrayList<>();
                 APIProvider apiProvider = RestApiCommonUtil.getProvider(adminUsername);
+                APIDataTypeMapper apiDataTypeMapper = new APIDataTypeMapper(apiProvider, organizationName);
                 List<API> apis = apiProvider.getAllAPIs();
                 for (API api : apis) {
                     API detailedAPI = apiProvider.getAPIbyUUID(api.getUuid(), organizationName);
-                    apiList.add(APIDataTypeMapper.mapAPIToAPIDataType(detailedAPI));
+                    apiList.add(apiDataTypeMapper.mapAPIToAPIDataType(detailedAPI));
                 }
-                apiListDTO.setCount(apiList.size());
-                apiListDTO.setList(apiList);
             } catch (APIManagementException e) {
                 return null;
             }
         }
+        apiListDTO.setCount(apiList.size());
+        apiListDTO.setList(apiList);
         return apiListDTO;
     }
 
@@ -42,7 +43,8 @@ public class APIService {
         try {
             APIProvider apiProvider = RestApiCommonUtil.getProvider("admin");
             API api = apiProvider.getAPIbyUUID(id, "carbon.super");
-            return APIDataTypeMapper.mapAPIToAPIDataType(api);
+            APIDataTypeMapper apiDataTypeMapper = new APIDataTypeMapper(apiProvider, "carbon.super");
+            return apiDataTypeMapper.mapAPIToAPIDataType(api);
         } catch (APIManagementException e) {
             return null;
         }

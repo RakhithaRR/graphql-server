@@ -22,9 +22,16 @@ import java.util.stream.Collectors;
 
 public class APIDataTypeMapper {
 
-    private static final String ORGANIZATION = "carbon.super";
+    private String organization;
+    private APIProvider apiProvider;
 
-    public static APIDataType mapAPIToAPIDataType(API api) {
+    public APIDataTypeMapper(APIProvider apiProvider, String organization) {
+        this.apiProvider = apiProvider;
+        this.organization = organization;
+    }
+
+
+    public APIDataType mapAPIToAPIDataType(API api) {
         APIDataType apiDataType = new APIDataType();
         // Attributes required for runtime API
         apiDataType.setId(api.getUuid());
@@ -33,7 +40,7 @@ public class APIDataTypeMapper {
         apiDataType.setContext(api.getContextTemplate());
         apiDataType.setProvider(api.getId().getProviderName());
         //TODO: get the organization from the current tenant
-        apiDataType.setOrganization(ORGANIZATION);
+        apiDataType.setOrganization(organization);
         apiDataType.setType(api.getType());
         apiDataType.setEndpointConfig(api.getEndpointConfig());
 
@@ -59,14 +66,14 @@ public class APIDataTypeMapper {
         return apiDataType;
     }
 
-    private static List<OperationDTO> getOperationsFromSwaggerDef(API api) {
+    private List<OperationDTO> getOperationsFromSwaggerDef(API api) {
         try {
             String swaggerDefinition;
             if (api.getSwaggerDefinition() != null) {
                 swaggerDefinition = api.getSwaggerDefinition();
             } else {
                 APIProvider apiProvider = RestApiCommonUtil.getProvider("admin");
-                swaggerDefinition = apiProvider.getOpenAPIDefinition(api.getUuid(), ORGANIZATION);
+                swaggerDefinition = apiProvider.getOpenAPIDefinition(api.getUuid(), organization);
             }
             APIDefinition apiDefinition = OASParserUtil.getOASParser(swaggerDefinition);
             Set<URITemplate> uriTemplates;
@@ -90,7 +97,7 @@ public class APIDataTypeMapper {
         }
     }
 
-    private static OperationDTO getOperationFromURITemplate(URITemplate uriTemplate) {
+    private OperationDTO getOperationFromURITemplate(URITemplate uriTemplate) {
 
         OperationDTO operationsDTO = new OperationDTO();
         operationsDTO.setVerb(uriTemplate.getHTTPVerb());
@@ -101,7 +108,7 @@ public class APIDataTypeMapper {
         return operationsDTO;
     }
 
-    private static void setOperationPoliciesToOperationsDTO(API api, List<OperationDTO> apiOperationsDTO) {
+    private void setOperationPoliciesToOperationsDTO(API api, List<OperationDTO> apiOperationsDTO) {
 
         Set<URITemplate> uriTemplates = api.getUriTemplates();
         Map<String, URITemplate> uriTemplateMap = new HashMap<>();
@@ -121,7 +128,7 @@ public class APIDataTypeMapper {
         }
     }
 
-    private static OperationPoliciesDTO fromOperationPolicyListToDTO(List<OperationPolicy> operationPolicyList) {
+    private OperationPoliciesDTO fromOperationPolicyListToDTO(List<OperationPolicy> operationPolicyList) {
 
         OperationPoliciesDTO dto = new OperationPoliciesDTO();
         List<OperationPolicyDTO> request = new ArrayList<>();
@@ -144,7 +151,7 @@ public class APIDataTypeMapper {
         return dto;
     }
 
-    private static OperationPolicyDTO fromOperationPolicyToDTO(OperationPolicy operationPolicy) {
+    private OperationPolicyDTO fromOperationPolicyToDTO(OperationPolicy operationPolicy) {
 
         OperationPolicyDTO dto = new OperationPolicyDTO();
         dto.setPolicyName(operationPolicy.getPolicyName());
@@ -154,7 +161,7 @@ public class APIDataTypeMapper {
         return dto;
     }
 
-    private static List<String> getCategoryNames(List<APICategory> apiCategories) {
+    private List<String> getCategoryNames(List<APICategory> apiCategories) {
 
         List<String> categoryNames = new ArrayList<>();
         if (apiCategories != null && !apiCategories.isEmpty()) {
@@ -165,7 +172,7 @@ public class APIDataTypeMapper {
         return categoryNames;
     }
 
-    private static BusinessInformation mapBusinessInformation(API api) {
+    private BusinessInformation mapBusinessInformation(API api) {
 
         BusinessInformation businessInformation = new BusinessInformation();
         businessInformation.setBusinessOwner(api.getBusinessOwner());
@@ -175,10 +182,9 @@ public class APIDataTypeMapper {
         return businessInformation;
     }
 
-    private static void getRevisionDetails(APIDataType apiDataType, String apiId) {
+    private void getRevisionDetails(APIDataType apiDataType, String apiId) {
         List<APIRevision> apiDeployedRevisions = new ArrayList<>();
         try {
-            APIProvider apiProvider = RestApiCommonUtil.getProvider("admin");
             List<APIRevision> apiRevisions = apiProvider.getAPIRevisions(apiId);
             for (APIRevision apiRevision : apiRevisions) {
                 if (!apiRevision.getApiRevisionDeploymentList().isEmpty()) {
@@ -208,7 +214,7 @@ public class APIDataTypeMapper {
         }
     }
 
-    private static Deployment fromAPIRevisionDeploymentToDeployment(
+    private Deployment fromAPIRevisionDeploymentToDeployment(
             APIRevisionDeployment apiRevisionDeployment) {
         Deployment revisionDeployment = new Deployment();
         revisionDeployment.setName(apiRevisionDeployment.getDeployment());
@@ -219,7 +225,7 @@ public class APIDataTypeMapper {
         return revisionDeployment;
     }
 
-    private static Date parseStringToDate(String time) {
+    private Date parseStringToDate(String time) {
         try {
             SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
             return dateFormat.parse(time);
@@ -229,11 +235,10 @@ public class APIDataTypeMapper {
         }
     }
 
-    private static List<DocumentDTO> getDocumentationDetails(String apiId) {
+    private List<DocumentDTO> getDocumentationDetails(String apiId) {
         List<DocumentDTO> documentDTOList = new ArrayList<>();
         try {
-            APIProvider apiProvider = RestApiCommonUtil.getProvider("admin");
-            List<Documentation> documentationList = apiProvider.getAllDocumentation(apiId, "carbon.super");
+            List<Documentation> documentationList = apiProvider.getAllDocumentation(apiId, organization);
 
             for (Documentation documentation : documentationList) {
                 DocumentDTO documentDTO = new DocumentDTO();
@@ -247,7 +252,7 @@ public class APIDataTypeMapper {
                 documentDTO.setVisibility(documentation.getVisibility().toString());
 
                 DocumentationContent documentationContent = apiProvider
-                        .getDocumentationContent(apiId, documentation.getId(), "carbon.super");
+                        .getDocumentationContent(apiId, documentation.getId(), organization);
                 if (Documentation.DocumentSourceType.INLINE.equals(documentation.getSourceType())
                         || Documentation.DocumentSourceType.MARKDOWN.equals(documentation.getSourceType())) {
                     if (documentationContent != null) {
@@ -267,7 +272,7 @@ public class APIDataTypeMapper {
         return documentDTOList;
     }
 
-    private static String getBase64EncodedDocument(DocumentationContent documentationContent) {
+    private String getBase64EncodedDocument(DocumentationContent documentationContent) {
         InputStream contentStream = documentationContent.getResourceFile().getContent();
         String base64EncodedDocument = "";
         if (contentStream != null) {
@@ -282,11 +287,10 @@ public class APIDataTypeMapper {
         return base64EncodedDocument;
     }
 
-    private static String getAPIDefinition(String apiId) {
+    private String getAPIDefinition(String apiId) {
         String apiDefinition = "";
         try {
-            APIProvider apiProvider = RestApiCommonUtil.getProvider("admin");
-            apiDefinition = apiProvider.getOpenAPIDefinition(apiId, ORGANIZATION);
+            apiDefinition = apiProvider.getOpenAPIDefinition(apiId, organization);
         } catch (APIManagementException e) {
             return apiDefinition;
         }
