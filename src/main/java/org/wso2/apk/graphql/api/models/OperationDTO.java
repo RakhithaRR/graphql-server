@@ -6,7 +6,7 @@ public class OperationDTO {
     private String target;
     private String verb;
     private Boolean authTypeEnabled;
-    private List<String> scopes;
+    private List<ScopeDTO> scopes;
     private String usagePlan;
 
     private OperationPoliciesDTO operationPolicies;
@@ -35,11 +35,11 @@ public class OperationDTO {
         this.authTypeEnabled = authTypeEnabled;
     }
 
-    public List<String> getScopes() {
+    public List<ScopeDTO> getScopes() {
         return scopes;
     }
 
-    public void setScopes(List<String> scopes) {
+    public void setScopes(List<ScopeDTO> scopes) {
         this.scopes = scopes;
     }
 

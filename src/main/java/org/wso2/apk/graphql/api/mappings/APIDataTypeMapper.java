@@ -30,11 +30,15 @@ public class APIDataTypeMapper {
     private final String organization;
     private final APIProvider apiProvider;
     private final int tenantId;
+    private final DocumentMapper documentMapper;
+    private final ScopeMapper scopeMapper;
 
     public APIDataTypeMapper(APIProvider apiProvider, String organization) throws APIManagementException {
         this.apiProvider = apiProvider;
         this.organization = organization;
         this.tenantId = APIUtil.getInternalOrganizationId(organization);
+        this.documentMapper = new DocumentMapper(apiProvider, organization);
+        this.scopeMapper = new ScopeMapper(apiProvider, organization);
     }
 
 
@@ -68,7 +72,7 @@ public class APIDataTypeMapper {
         apiDataType.setDefinition(getAPIDefinition(api.getUuid()));
         apiDataType.setBusinessInformation(mapBusinessInformation(api));
         getRevisionDetails(apiDataType, api.getUuid());
-        apiDataType.setDocuments(getDocumentationDetails(api.getUuid()));
+        apiDataType.setDocuments(documentMapper.getDocumentationDetails(api.getUuid()));
         apiDataType.setThumbnail(getThumbnail(api.getUuid()));
         apiDataType.setClientCertificates(getClientCertificates(api));
         apiDataType.setEndpointCertificates(getEndpointCertificates(api.getEndpointConfig()));
@@ -97,7 +101,7 @@ public class APIDataTypeMapper {
             List<OperationDTO> operationsDTOList = new ArrayList<>();
             if (!StringUtils.isEmpty(swaggerDefinition)) {
                 for (URITemplate uriTemplate : uriTemplates) {
-                    OperationDTO operationsDTO = getOperationFromURITemplate(uriTemplate);
+                    OperationDTO operationsDTO = getOperationFromURITemplate(uriTemplate, swaggerDefinition);
                     operationsDTOList.add(operationsDTO);
                 }
             }
@@ -108,13 +112,21 @@ public class APIDataTypeMapper {
         }
     }
 
-    private OperationDTO getOperationFromURITemplate(URITemplate uriTemplate) {
+    private OperationDTO getOperationFromURITemplate(URITemplate uriTemplate, String definition)
+            throws APIManagementException {
 
         OperationDTO operationsDTO = new OperationDTO();
         operationsDTO.setVerb(uriTemplate.getHTTPVerb());
         operationsDTO.setTarget(uriTemplate.getUriTemplate());
-        operationsDTO.setScopes(uriTemplate.retrieveAllScopes().stream().map(Scope::getKey).collect(
-                Collectors.toList()));
+        operationsDTO.setScopes(scopeMapper
+                .getScopesFromDefinition(definition)
+                .stream()
+                .filter(scope -> uriTemplate.retrieveAllScopes().
+                        stream()
+                        .map(Scope::getKey)
+                        .collect(Collectors.toList())
+                        .contains(scope.getName()))
+                .collect(Collectors.toList()));
         operationsDTO.setAuthTypeEnabled(!APIConstants.AUTH_NO_AUTHENTICATION.equals(uriTemplate.getAuthType()));
         return operationsDTO;
     }
@@ -244,58 +256,6 @@ public class APIDataTypeMapper {
             return null;
             // todo: handle exception
         }
-    }
-
-    private List<DocumentDTO> getDocumentationDetails(String apiId) {
-        List<DocumentDTO> documentDTOList = new ArrayList<>();
-        try {
-            List<Documentation> documentationList = apiProvider.getAllDocumentation(apiId, organization);
-
-            for (Documentation documentation : documentationList) {
-                DocumentDTO documentDTO = new DocumentDTO();
-                documentDTO.setDocumentId(documentation.getId());
-                documentDTO.setName(documentation.getName());
-                documentDTO.setSummary(documentation.getSummary());
-                documentDTO.setType(documentation.getType().toString());
-                documentDTO.setSourceType(documentation.getSourceType().toString());
-                documentDTO.setOtherTypeName(documentation.getOtherTypeName());
-                documentDTO.setSourceUrl(documentation.getSourceUrl());
-                documentDTO.setVisibility(documentation.getVisibility().toString());
-
-                DocumentationContent documentationContent = apiProvider
-                        .getDocumentationContent(apiId, documentation.getId(), organization);
-                if (Documentation.DocumentSourceType.INLINE.equals(documentation.getSourceType())
-                        || Documentation.DocumentSourceType.MARKDOWN.equals(documentation.getSourceType())) {
-                    if (documentationContent != null) {
-                        documentDTO.setInlineContent(documentationContent.getTextContent());
-                    }
-                }
-                if (Documentation.DocumentSourceType.FILE.equals(documentation.getSourceType())
-                        && documentationContent != null) {
-                    documentDTO.setFileName(getBase64EncodedDocument(documentationContent));
-                }
-                documentDTOList.add(documentDTO);
-            }
-        } catch (APIManagementException e) {
-            return documentDTOList;
-            // todo: handle exception
-        }
-        return documentDTOList;
-    }
-
-    private String getBase64EncodedDocument(DocumentationContent documentationContent) {
-        InputStream contentStream = documentationContent.getResourceFile().getContent();
-        String base64EncodedDocument = "";
-        if (contentStream != null) {
-            try {
-                byte[] bytes = IOUtils.toByteArray(contentStream);
-                base64EncodedDocument = Base64.getEncoder().encodeToString(bytes);
-                return base64EncodedDocument;
-            } catch (IOException e) {
-                return "";
-            }
-        }
-        return base64EncodedDocument;
     }
 
     private String getAPIDefinition(String apiId) {

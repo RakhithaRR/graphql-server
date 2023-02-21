@@ -47,10 +47,19 @@ type API {
 type Operation {
     target: String
     verb: String
-    scopes: [String]
+    scopes: [Scope]
     authTypeEnabled: Boolean
     operationPolicies: OperationPolicies
     usagePlan: String
+}
+
+type Scope {
+    id: String
+    name: String
+    displayName: String
+    description: String
+    bindings: [String]
+    isShared: Boolean
 }
 
 type OperationPolicies {
