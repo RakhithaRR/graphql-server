@@ -29,6 +29,8 @@ public class APIDataType {
     private String thumbnail;
     private List<CertificateDTO> clientCertificates;
     private List<CertificateDTO> endpointCertificates;
+    private Boolean isRevision;
+    private List<CommentDTO> comments;
 
     public String getId() {
         return id;
@@ -220,5 +222,21 @@ public class APIDataType {
 
     public void setEndpointCertificates(List<CertificateDTO> endpointCertificates) {
         this.endpointCertificates = endpointCertificates;
+    }
+
+    public boolean isRevision() {
+        return isRevision;
+    }
+
+    public void setIsRevision(Boolean isRevision) {
+        this.isRevision = isRevision;
+    }
+
+    public List<CommentDTO> getComments() {
+        return comments;
+    }
+
+    public void setComments(List<CommentDTO> comments) {
+        this.comments = comments;
     }
 }

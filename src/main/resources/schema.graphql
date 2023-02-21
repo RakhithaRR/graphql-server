@@ -40,6 +40,8 @@ type API {
     thumbnail: String
     clientCertificates: [Certificate]
     endpointCertificates: [Certificate]
+    isRevision: Boolean
+    comments: [Comment]
 }
 
 type Operation {
@@ -104,4 +106,14 @@ type Certificate {
     certificate: String
     endpoint: String
     tierName: String
+}
+
+type Comment {
+    id: String
+    content: String
+    category: String
+    entrypoint: String
+    user: String
+    parentCommentId: String
+    replies: [Comment]
 }

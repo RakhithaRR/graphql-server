@@ -49,6 +49,7 @@ public class APIDataTypeMapper {
         apiDataType.setOrganization(organization);
         apiDataType.setType(api.getType());
         apiDataType.setEndpointConfig(api.getEndpointConfig());
+        apiDataType.setIsRevision(api.isRevision());
 
         apiDataType.setDescription(api.getDescription());
         if (StringUtils.isEmpty(api.getTransports())) {
@@ -71,6 +72,7 @@ public class APIDataTypeMapper {
         apiDataType.setThumbnail(getThumbnail(api.getUuid()));
         apiDataType.setClientCertificates(getClientCertificates(api));
         apiDataType.setEndpointCertificates(getEndpointCertificates(api.getEndpointConfig()));
+        apiDataType.setComments(getComments(api.getUuid()));
 
         return apiDataType;
     }
@@ -365,5 +367,33 @@ public class APIDataTypeMapper {
             return certificateDTOList;
         }
         return certificateDTOList;
+    }
+
+    private List<CommentDTO> getComments(String apiId) {
+        List<CommentDTO> commentDTOList = new ArrayList<>();
+        try {
+            ApiTypeWrapper apiTypeWrapper = apiProvider.getAPIorAPIProductByUUID(apiId, organization);
+            CommentList comments = apiProvider.getComments(apiTypeWrapper, null, 100, 0);
+            commentDTOList = fromCommentListToCommentDTOList(comments);
+        } catch (APIManagementException e) {
+            return commentDTOList;
+        }
+        return commentDTOList;
+    }
+
+    private List<CommentDTO> fromCommentListToCommentDTOList(CommentList comments) {
+        List<CommentDTO> commentDTOList = new ArrayList<>();
+        for (Comment comment : comments.getList()) {
+            CommentDTO commentDTO = new CommentDTO();
+            commentDTO.setId(comment.getId());
+            commentDTO.setContent(comment.getText());
+            commentDTO.setUser(comment.getUser());
+            commentDTO.setEntrypoint(comment.getEntryPoint());
+            commentDTO.setCategory(comment.getCategory());
+            commentDTO.setParentCommentId(comment.getParentCommentID());
+            commentDTO.setReplies(fromCommentListToCommentDTOList(comment.getReplies()));
+            commentDTOList.add(commentDTO);
+        }
+        return commentDTOList;
     }
 }
