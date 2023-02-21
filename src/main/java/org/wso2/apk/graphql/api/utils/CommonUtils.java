@@ -12,8 +12,6 @@ import java.util.Arrays;
 import java.util.List;
 
 public class CommonUtils {
-    private TenantManager tenantManager;
-    private List<Tenant> tenantsArray;
 
     public static List<Tenant> loadTenants() {
         List<Tenant> tenantsArray = new ArrayList<>();

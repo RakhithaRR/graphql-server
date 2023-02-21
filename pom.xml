@@ -36,6 +36,14 @@
                     <packagingExcludes>WEB-INF/lib/tomcat*, WEB-INF/lib/pax*, WEB-INF/lib/xerces*</packagingExcludes>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>11</source>
+                    <target>11</target>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 
@@ -135,6 +143,12 @@
             <groupId>org.wso2.carbon</groupId>
             <artifactId>org.wso2.carbon.user.core</artifactId>
             <version>4.6.3</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>2.9.0</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>

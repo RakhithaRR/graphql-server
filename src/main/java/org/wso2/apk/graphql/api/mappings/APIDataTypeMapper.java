@@ -1,5 +1,7 @@
 package org.wso2.apk.graphql.api.mappings;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.wso2.apk.graphql.api.datatypes.APIDataType;
@@ -7,9 +9,12 @@ import org.wso2.apk.graphql.api.models.*;
 import org.wso2.carbon.apimgt.api.APIDefinition;
 import org.wso2.carbon.apimgt.api.APIManagementException;
 import org.wso2.carbon.apimgt.api.APIProvider;
+import org.wso2.carbon.apimgt.api.dto.CertificateMetadataDTO;
+import org.wso2.carbon.apimgt.api.dto.ClientCertificateDTO;
 import org.wso2.carbon.apimgt.api.model.*;
 import org.wso2.carbon.apimgt.impl.APIConstants;
 import org.wso2.carbon.apimgt.impl.definitions.OASParserUtil;
+import org.wso2.carbon.apimgt.impl.utils.APIUtil;
 import org.wso2.carbon.apimgt.impl.utils.OperationPolicyComparator;
 import org.wso2.carbon.apimgt.rest.api.common.RestApiCommonUtil;
 
@@ -22,12 +27,14 @@ import java.util.stream.Collectors;
 
 public class APIDataTypeMapper {
 
-    private String organization;
-    private APIProvider apiProvider;
+    private final String organization;
+    private final APIProvider apiProvider;
+    private final int tenantId;
 
-    public APIDataTypeMapper(APIProvider apiProvider, String organization) {
+    public APIDataTypeMapper(APIProvider apiProvider, String organization) throws APIManagementException {
         this.apiProvider = apiProvider;
         this.organization = organization;
+        this.tenantId = APIUtil.getInternalOrganizationId(organization);
     }
 
 
@@ -39,7 +46,6 @@ public class APIDataTypeMapper {
         apiDataType.setVersion(api.getId().getVersion());
         apiDataType.setContext(api.getContextTemplate());
         apiDataType.setProvider(api.getId().getProviderName());
-        //TODO: get the organization from the current tenant
         apiDataType.setOrganization(organization);
         apiDataType.setType(api.getType());
         apiDataType.setEndpointConfig(api.getEndpointConfig());
@@ -62,6 +68,9 @@ public class APIDataTypeMapper {
         apiDataType.setBusinessInformation(mapBusinessInformation(api));
         getRevisionDetails(apiDataType, api.getUuid());
         apiDataType.setDocuments(getDocumentationDetails(api.getUuid()));
+        apiDataType.setThumbnail(getThumbnail(api.getUuid()));
+        apiDataType.setClientCertificates(getClientCertificates(api));
+        apiDataType.setEndpointCertificates(getEndpointCertificates(api.getEndpointConfig()));
 
         return apiDataType;
     }
@@ -295,5 +304,66 @@ public class APIDataTypeMapper {
             return apiDefinition;
         }
         return apiDefinition;
+    }
+
+    private String getThumbnail(String apiId) {
+        String base64EncodedThumbnail = "";
+        try {
+            ResourceFile thumbnail = apiProvider.getIcon(apiId, organization);
+            InputStream thumbnailStream = thumbnail.getContent();
+            byte[] bytes = IOUtils.toByteArray(thumbnailStream);
+            base64EncodedThumbnail = Base64.getEncoder().encodeToString(bytes);
+            return base64EncodedThumbnail;
+        } catch (Exception e) {
+            return base64EncodedThumbnail;
+        }
+    }
+
+    private List<CertificateDTO> getClientCertificates(API api) {
+        List<CertificateDTO> certificateDTOList = new ArrayList<>();
+        try {
+            List<ClientCertificateDTO> certificates = apiProvider
+                    .searchClientCertificates(tenantId, null, api.getId(), organization);
+            for (ClientCertificateDTO certificate : certificates) {
+                CertificateDTO certificateDTO = new CertificateDTO();
+                certificateDTO.setAlias(certificate.getAlias());
+                certificateDTO.setApiId(certificate.getApiIdentifier().getUUID());
+                certificateDTO.setCertificate(certificate.getCertificate());
+                certificateDTO.setTierName(certificate.getTierName());
+                certificateDTOList.add(certificateDTO);
+            }
+        } catch (APIManagementException e) {
+            return certificateDTOList;
+        }
+        return certificateDTOList;
+    }
+
+    private List<CertificateDTO> getEndpointCertificates(String config) {
+        List<CertificateDTO> certificateDTOList = new ArrayList<>();
+        Set<String> endpoints = new HashSet<>();
+        if (config.isBlank()) {
+            return certificateDTOList;
+        }
+        JsonObject configObject = JsonParser.parseString(config).getAsJsonObject();
+        JsonObject endpointConfig = configObject.getAsJsonObject("production_endpoints");
+        endpoints.add(endpointConfig.get("url").getAsString());
+        endpointConfig = configObject.getAsJsonObject("sandbox_endpoints");
+        endpoints.add(endpointConfig.get("url").getAsString());
+        try {
+            List<CertificateMetadataDTO> certificates;
+            for (String endpoint : endpoints) {
+                certificates = apiProvider.searchCertificates(tenantId, null, endpoint);
+                for (CertificateMetadataDTO certificate : certificates) {
+                    CertificateDTO certificateDTO = new CertificateDTO();
+                    certificateDTO.setAlias(certificate.getAlias());
+                    certificateDTO.setEndpoint(endpoint);
+                    certificateDTO.setCertificate(certificate.getCertificate());
+                    certificateDTOList.add(certificateDTO);
+                }
+            }
+        } catch (Exception e) {
+            return certificateDTOList;
+        }
+        return certificateDTOList;
     }
 }

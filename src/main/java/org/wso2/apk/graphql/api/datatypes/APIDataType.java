@@ -26,6 +26,9 @@ public class APIDataType {
     private List<Deployment> deployments;
     private List<DocumentDTO> documents;
     private String definition;
+    private String thumbnail;
+    private List<CertificateDTO> clientCertificates;
+    private List<CertificateDTO> endpointCertificates;
 
     public String getId() {
         return id;
@@ -193,5 +196,29 @@ public class APIDataType {
 
     public void setDefinition(String definition) {
         this.definition = definition;
+    }
+
+    public String getThumbnail() {
+        return thumbnail;
+    }
+
+    public void setThumbnail(String thumbnail) {
+        this.thumbnail = thumbnail;
+    }
+
+    public List<CertificateDTO> getClientCertificates() {
+        return clientCertificates;
+    }
+
+    public void setClientCertificates(List<CertificateDTO> clientCertificates) {
+        this.clientCertificates = clientCertificates;
+    }
+
+    public List<CertificateDTO> getEndpointCertificates() {
+        return endpointCertificates;
+    }
+
+    public void setEndpointCertificates(List<CertificateDTO> endpointCertificates) {
+        this.endpointCertificates = endpointCertificates;
     }
 }

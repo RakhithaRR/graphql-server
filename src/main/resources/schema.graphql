@@ -37,6 +37,9 @@ type API {
     documents: [Document]
     endpointConfig: String
     definition: String
+    thumbnail: String
+    clientCertificates: [Certificate]
+    endpointCertificates: [Certificate]
 }
 
 type Operation {
@@ -93,4 +96,12 @@ type Document {
     inlineContent: String
     visibility: String
     fileName: String
+}
+
+type Certificate {
+    alias: String
+    apiId: String
+    certificate: String
+    endpoint: String
+    tierName: String
 }
