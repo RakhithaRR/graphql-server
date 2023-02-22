@@ -77,6 +77,7 @@ public class APIDataTypeMapper {
         apiDataType.setClientCertificates(getClientCertificates(api));
         apiDataType.setEndpointCertificates(getEndpointCertificates(api.getEndpointConfig()));
         apiDataType.setComments(getComments(api.getUuid()));
+        apiDataType.setCorsConfiguration(getCorsConfiguration(api));
 
         return apiDataType;
     }
@@ -355,5 +356,16 @@ public class APIDataTypeMapper {
             commentDTOList.add(commentDTO);
         }
         return commentDTOList;
+    }
+
+    private CorsDTO getCorsConfiguration(API api) {
+        CORSConfiguration corsConfiguration = api.getCorsConfiguration();
+        CorsDTO corsDTO = new CorsDTO();
+        corsDTO.setEnabled(corsConfiguration.isCorsConfigurationEnabled());
+        corsDTO.setAccessControlAllowOrigins(corsConfiguration.getAccessControlAllowOrigins());
+        corsDTO.setAccessControlAllowCredentials(corsConfiguration.isAccessControlAllowCredentials());
+        corsDTO.setAccessControlAllowHeaders(corsConfiguration.getAccessControlAllowHeaders());
+        corsDTO.setAccessControlAllowMethods(corsConfiguration.getAccessControlAllowMethods());
+        return corsDTO;
     }
 }

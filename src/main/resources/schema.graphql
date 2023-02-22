@@ -42,6 +42,7 @@ type API {
     endpointCertificates: [Certificate]
     isRevision: Boolean
     comments: [Comment]
+    corsConfiguration: CorsConfiguration
 }
 
 type Operation {
@@ -125,4 +126,12 @@ type Comment {
     user: String
     parentCommentId: String
     replies: [Comment]
+}
+
+type CorsConfiguration {
+    enabled: Boolean
+    accessControlAllowOrigins: [String]
+    accessControlAllowCredentials: Boolean
+    accessControlAllowHeaders: [String]
+    accessControlAllowMethods: [String]
 }

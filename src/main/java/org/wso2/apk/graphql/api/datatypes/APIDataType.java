@@ -31,6 +31,7 @@ public class APIDataType {
     private List<CertificateDTO> endpointCertificates;
     private Boolean isRevision;
     private List<CommentDTO> comments;
+    private CorsDTO corsConfiguration;
 
     public String getId() {
         return id;
@@ -238,5 +239,13 @@ public class APIDataType {
 
     public void setComments(List<CommentDTO> comments) {
         this.comments = comments;
+    }
+
+    public CorsDTO getCorsConfiguration() {
+        return corsConfiguration;
+    }
+
+    public void setCorsConfiguration(CorsDTO corsConfiguration) {
+        this.corsConfiguration = corsConfiguration;
     }
 }
