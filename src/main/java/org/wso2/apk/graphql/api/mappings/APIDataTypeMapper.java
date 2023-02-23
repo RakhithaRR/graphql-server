@@ -33,6 +33,7 @@ public class APIDataTypeMapper {
     private final DocumentMapper documentMapper;
     private final ScopeMapper scopeMapper;
     private final MediationMapper mediationMapper;
+    private final AdvancedPolicyMapper advancedPolicyMapper;
 
     public APIDataTypeMapper(APIProvider apiProvider, String adminUsername, String organization)
             throws APIManagementException {
@@ -43,6 +44,7 @@ public class APIDataTypeMapper {
         this.documentMapper = new DocumentMapper(apiProvider, adminUsername, organization);
         this.scopeMapper = new ScopeMapper(apiProvider, organization);
         this.mediationMapper = new MediationMapper(apiProvider, adminUsername, organization, tenantId);
+        this.advancedPolicyMapper = new AdvancedPolicyMapper(apiProvider, adminUsername, organization);
     }
 
 
@@ -84,6 +86,7 @@ public class APIDataTypeMapper {
         apiDataType.setComments(getComments(api.getUUID()));
         apiDataType.setCorsConfiguration(getCorsConfiguration(api));
         apiDataType.setMediationPolicies(mediationMapper.getMediationPolicies(api));
+        apiDataType.setAdvancedPolicies(advancedPolicyMapper.getAdvancedPolicies(api));
 
         return apiDataType;
     }
@@ -135,6 +138,7 @@ public class APIDataTypeMapper {
                         .contains(scope.getName()))
                 .collect(Collectors.toList()));
         operationsDTO.setAuthTypeEnabled(!APIConstants.AUTH_NO_AUTHENTICATION.equals(uriTemplate.getAuthType()));
+        operationsDTO.setThrottlingPolicy(uriTemplate.getThrottlingTier());
         return operationsDTO;
     }
 

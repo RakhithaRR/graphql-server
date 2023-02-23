@@ -8,6 +8,7 @@ public class OperationDTO {
     private Boolean authTypeEnabled;
     private List<ScopeDTO> scopes;
     private String usagePlan;
+    private String throttlingPolicy;
 
     private OperationPoliciesDTO operationPolicies;
 
@@ -57,5 +58,13 @@ public class OperationDTO {
 
     public void setUsagePlan(String usagePlan) {
         this.usagePlan = usagePlan;
+    }
+
+    public String getThrottlingPolicy() {
+        return throttlingPolicy;
+    }
+
+    public void setThrottlingPolicy(String throttlingPolicy) {
+        this.throttlingPolicy = throttlingPolicy;
     }
 }

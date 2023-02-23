@@ -1,6 +1,7 @@
 package org.wso2.apk.graphql.api.datatypes;
 
 import org.wso2.apk.graphql.api.models.*;
+import org.wso2.apk.graphql.api.models.ratelimit.AdvancedPolicyDTO;
 
 import java.util.List;
 
@@ -33,6 +34,7 @@ public class APIDataType {
     private List<CommentDTO> comments;
     private CorsDTO corsConfiguration;
     private List<MediationDTO> mediationPolicies;
+    private List<AdvancedPolicyDTO> advancedPolicies;
 
     public String getId() {
         return id;
@@ -256,5 +258,13 @@ public class APIDataType {
 
     public void setMediationPolicies(List<MediationDTO> mediationPolicies) {
         this.mediationPolicies = mediationPolicies;
+    }
+
+    public List<AdvancedPolicyDTO> getAdvancedPolicies() {
+        return advancedPolicies;
+    }
+
+    public void setAdvancedPolicies(List<AdvancedPolicyDTO> advancedPolicies) {
+        this.advancedPolicies = advancedPolicies;
     }
 }

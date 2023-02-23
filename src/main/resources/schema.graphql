@@ -42,6 +42,7 @@ type API {
     comments: [Comment]
     corsConfiguration: CorsConfiguration
     mediationPolicies: [MediationPolicy]
+    advancedPolicies: [AdvancedPolicy]
 }
 
 type Operation {
@@ -50,6 +51,7 @@ type Operation {
     scopes: [Scope]
     authTypeEnabled: Boolean
     usagePlan: String
+    throttlingPolicy: String
 }
 
 type Scope {
@@ -109,4 +111,29 @@ type MediationPolicy {
     type: String
     shared: Boolean
     content: String
+}
+
+type AdvancedPolicy {
+    id: String
+    name: String
+    description: String
+    defaultLimit: DefaultLimit
+}
+
+type DefaultLimit {
+    type: String
+    requestLimit: RequestLimit
+    bandwidthLimit: BandwidthLimit
+}
+
+type RequestLimit{
+    timeUnit: String
+    unitTime: Int
+    requestCount: Int
+}
+type BandwidthLimit{
+    timeUnit: String
+    unitTime: Int
+    dataAmount: Int
+    dataUnit: String
 }
