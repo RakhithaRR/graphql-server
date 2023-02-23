@@ -32,6 +32,8 @@ type API {
     apiUsagePolicy: String
     monetization: String
     businessInformation: BusinessInformation
+    revision: Revision
+    deployments: [Deployment]
     documents: [Document]
     endpointConfig: String
     definition: String
@@ -41,7 +43,6 @@ type API {
     isRevision: Boolean
     comments: [Comment]
     corsConfiguration: CorsConfiguration
-    mediationPolicies: [MediationPolicy]
 }
 
 type Operation {
@@ -49,6 +50,7 @@ type Operation {
     verb: String
     scopes: [Scope]
     authTypeEnabled: Boolean
+    operationPolicies: OperationPolicies
     usagePlan: String
 }
 
@@ -61,11 +63,38 @@ type Scope {
     isShared: Boolean
 }
 
+type OperationPolicies {
+    request: [OperationPolicy]
+    response: [OperationPolicy]
+    fault: [OperationPolicy]
+}
+
+type OperationPolicy {
+    policyId: String
+    policyName: String
+    policyVersion: String
+    parameters: String
+}
+
 type BusinessInformation {
     businessOwner: String
     businessOwnerEmail: String
     technicalOwner: String
     technicalOwnerEmail: String
+}
+
+type Revision {
+    id: String
+    displayName: String
+    description: String
+    createdTime: String
+}
+
+type Deployment {
+    name: String
+    revisionId: String
+    vhost: String
+    deployedTime: String
 }
 
 type Document {
@@ -105,12 +134,4 @@ type CorsConfiguration {
     accessControlAllowCredentials: Boolean
     accessControlAllowHeaders: [String]
     accessControlAllowMethods: [String]
-}
-
-type MediationPolicy {
-    id: String
-    name: String
-    type: String
-    shared: Boolean
-    content: String
 }

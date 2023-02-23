@@ -32,6 +32,7 @@ public class APIDataType {
     private Boolean isRevision;
     private List<CommentDTO> comments;
     private CorsDTO corsConfiguration;
+    private List<MediationDTO> mediationPolicies;
 
     public String getId() {
         return id;
@@ -247,5 +248,13 @@ public class APIDataType {
 
     public void setCorsConfiguration(CorsDTO corsConfiguration) {
         this.corsConfiguration = corsConfiguration;
+    }
+
+    public List<MediationDTO> getMediationPolicies() {
+        return mediationPolicies;
+    }
+
+    public void setMediationPolicies(List<MediationDTO> mediationPolicies) {
+        this.mediationPolicies = mediationPolicies;
     }
 }

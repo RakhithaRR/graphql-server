@@ -15,11 +15,14 @@ import org.wso2.carbon.apimgt.api.model.*;
 import org.wso2.carbon.apimgt.impl.APIConstants;
 import org.wso2.carbon.apimgt.impl.definitions.OASParserUtil;
 import org.wso2.carbon.apimgt.impl.utils.APIUtil;
-import org.wso2.carbon.apimgt.impl.utils.OperationPolicyComparator;
-import org.wso2.carbon.apimgt.rest.api.common.RestApiCommonUtil;
+//import org.wso2.carbon.apimgt.impl.utils.OperationPolicyComparator;
+import org.wso2.carbon.apimgt.rest.api.util.utils.RestApiUtil;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -29,23 +32,28 @@ public class APIDataTypeMapper {
 
     private final String organization;
     private final APIProvider apiProvider;
+    private final String adminUsername;
     private final int tenantId;
     private final DocumentMapper documentMapper;
     private final ScopeMapper scopeMapper;
+    private final MediationMapper mediationMapper;
 
-    public APIDataTypeMapper(APIProvider apiProvider, String organization) throws APIManagementException {
+    public APIDataTypeMapper(APIProvider apiProvider, String adminUsername, String organization)
+            throws APIManagementException {
         this.apiProvider = apiProvider;
         this.organization = organization;
-        this.tenantId = APIUtil.getInternalOrganizationId(organization);
-        this.documentMapper = new DocumentMapper(apiProvider, organization);
+        this.adminUsername = adminUsername;
+        this.tenantId = APIUtil.getTenantIdFromTenantDomain(organization);
+        this.documentMapper = new DocumentMapper(apiProvider, adminUsername, organization);
         this.scopeMapper = new ScopeMapper(apiProvider, organization);
+        this.mediationMapper = new MediationMapper(apiProvider, adminUsername, organization, tenantId);
     }
 
 
     public APIDataType mapAPIToAPIDataType(API api) {
         APIDataType apiDataType = new APIDataType();
         // Attributes required for runtime API
-        apiDataType.setId(api.getUuid());
+        apiDataType.setId(api.getUUID());
         apiDataType.setName(api.getId().getName());
         apiDataType.setVersion(api.getId().getVersion());
         apiDataType.setContext(api.getContextTemplate());
@@ -53,7 +61,8 @@ public class APIDataTypeMapper {
         apiDataType.setOrganization(organization);
         apiDataType.setType(api.getType());
         apiDataType.setEndpointConfig(api.getEndpointConfig());
-        apiDataType.setIsRevision(api.isRevision());
+        // Not available in 3.2.0
+        // apiDataType.setIsRevision(api.isRevision());
 
         apiDataType.setDescription(api.getDescription());
         if (StringUtils.isEmpty(api.getTransports())) {
@@ -69,15 +78,16 @@ public class APIDataTypeMapper {
         apiDataType.setCategories(getCategoryNames(api.getApiCategories()));
         apiDataType.setLifecycleStatus(api.getStatus());
         apiDataType.setAdditionalProperties(api.getAdditionalProperties().toJSONString());
-        apiDataType.setDefinition(getAPIDefinition(api.getUuid()));
+        apiDataType.setDefinition(getAPIDefinition(api));
         apiDataType.setBusinessInformation(mapBusinessInformation(api));
-        getRevisionDetails(apiDataType, api.getUuid());
-        apiDataType.setDocuments(documentMapper.getDocumentationDetails(api.getUuid()));
-        apiDataType.setThumbnail(getThumbnail(api.getUuid()));
+//        getRevisionDetails(apiDataType, api.getUUID());
+        apiDataType.setDocuments(documentMapper.getDocumentationDetails(api));
+        apiDataType.setThumbnail(getThumbnail(api));
         apiDataType.setClientCertificates(getClientCertificates(api));
         apiDataType.setEndpointCertificates(getEndpointCertificates(api.getEndpointConfig()));
-        apiDataType.setComments(getComments(api.getUuid()));
+//        apiDataType.setComments(getComments(api.getUUID()));
         apiDataType.setCorsConfiguration(getCorsConfiguration(api));
+        apiDataType.setMediationPolicies(mediationMapper.getMediationPolicies(api));
 
         return apiDataType;
     }
@@ -88,8 +98,7 @@ public class APIDataTypeMapper {
             if (api.getSwaggerDefinition() != null) {
                 swaggerDefinition = api.getSwaggerDefinition();
             } else {
-                APIProvider apiProvider = RestApiCommonUtil.getProvider("admin");
-                swaggerDefinition = apiProvider.getOpenAPIDefinition(api.getUuid(), organization);
+                swaggerDefinition = apiProvider.getOpenAPIDefinition(api.getId());
             }
             APIDefinition apiDefinition = OASParserUtil.getOASParser(swaggerDefinition);
             Set<URITemplate> uriTemplates;
@@ -106,7 +115,8 @@ public class APIDataTypeMapper {
                     operationsDTOList.add(operationsDTO);
                 }
             }
-            setOperationPoliciesToOperationsDTO(api, operationsDTOList);
+//            Not available in 3.2.0
+//            setOperationPoliciesToOperationsDTO(api, operationsDTOList);
             return operationsDTOList;
         } catch (APIManagementException e) {
             return null;
@@ -132,58 +142,59 @@ public class APIDataTypeMapper {
         return operationsDTO;
     }
 
-    private void setOperationPoliciesToOperationsDTO(API api, List<OperationDTO> apiOperationsDTO) {
+//    Not available in 3.2.0
+//    private void setOperationPoliciesToOperationsDTO(API api, List<OperationDTO> apiOperationsDTO) {
+//
+//        Set<URITemplate> uriTemplates = api.getUriTemplates();
+//        Map<String, URITemplate> uriTemplateMap = new HashMap<>();
+//        for (URITemplate uriTemplate : uriTemplates) {
+//            String key = uriTemplate.getUriTemplate() + ":" + uriTemplate.getHTTPVerb();
+//            uriTemplateMap.put(key, uriTemplate);
+//        }
+//
+//        for (OperationDTO operationsDTO : apiOperationsDTO) {
+//            String key = operationsDTO.getTarget() + ":" + operationsDTO.getVerb();
+//            if (uriTemplateMap.get(key) != null) {
+//                List<OperationPolicy> operationPolicies = uriTemplateMap.get(key).getOperationPolicies();
+//                if (!operationPolicies.isEmpty()) {
+//                    operationsDTO.setOperationPolicies(fromOperationPolicyListToDTO(operationPolicies));
+//                }
+//            }
+//        }
+//    }
 
-        Set<URITemplate> uriTemplates = api.getUriTemplates();
-        Map<String, URITemplate> uriTemplateMap = new HashMap<>();
-        for (URITemplate uriTemplate : uriTemplates) {
-            String key = uriTemplate.getUriTemplate() + ":" + uriTemplate.getHTTPVerb();
-            uriTemplateMap.put(key, uriTemplate);
-        }
-
-        for (OperationDTO operationsDTO : apiOperationsDTO) {
-            String key = operationsDTO.getTarget() + ":" + operationsDTO.getVerb();
-            if (uriTemplateMap.get(key) != null) {
-                List<OperationPolicy> operationPolicies = uriTemplateMap.get(key).getOperationPolicies();
-                if (!operationPolicies.isEmpty()) {
-                    operationsDTO.setOperationPolicies(fromOperationPolicyListToDTO(operationPolicies));
-                }
-            }
-        }
-    }
-
-    private OperationPoliciesDTO fromOperationPolicyListToDTO(List<OperationPolicy> operationPolicyList) {
-
-        OperationPoliciesDTO dto = new OperationPoliciesDTO();
-        List<OperationPolicyDTO> request = new ArrayList<>();
-        List<OperationPolicyDTO> response = new ArrayList<>();
-        List<OperationPolicyDTO> fault = new ArrayList<>();
-        operationPolicyList.sort(new OperationPolicyComparator());
-        for (OperationPolicy op : operationPolicyList) {
-            OperationPolicyDTO policyDTO = fromOperationPolicyToDTO(op);
-            if (APIConstants.OPERATION_SEQUENCE_TYPE_REQUEST.equals(op.getDirection())) {
-                request.add(policyDTO);
-            } else if (APIConstants.OPERATION_SEQUENCE_TYPE_RESPONSE.equals(op.getDirection())) {
-                response.add(policyDTO);
-            } else if (APIConstants.OPERATION_SEQUENCE_TYPE_FAULT.equals(op.getDirection())) {
-                fault.add(policyDTO);
-            }
-        }
-        dto.setRequest(request);
-        dto.setResponse(response);
-        dto.setFault(fault);
-        return dto;
-    }
-
-    private OperationPolicyDTO fromOperationPolicyToDTO(OperationPolicy operationPolicy) {
-
-        OperationPolicyDTO dto = new OperationPolicyDTO();
-        dto.setPolicyName(operationPolicy.getPolicyName());
-        dto.setPolicyVersion(operationPolicy.getPolicyVersion());
-        dto.setPolicyId(operationPolicy.getPolicyId());
-        dto.setParameters(operationPolicy.getParameters().toString());
-        return dto;
-    }
+//    private OperationPoliciesDTO fromOperationPolicyListToDTO(List<OperationPolicy> operationPolicyList) {
+//
+//        OperationPoliciesDTO dto = new OperationPoliciesDTO();
+//        List<OperationPolicyDTO> request = new ArrayList<>();
+//        List<OperationPolicyDTO> response = new ArrayList<>();
+//        List<OperationPolicyDTO> fault = new ArrayList<>();
+//        operationPolicyList.sort(new OperationPolicyComparator());
+//        for (OperationPolicy op : operationPolicyList) {
+//            OperationPolicyDTO policyDTO = fromOperationPolicyToDTO(op);
+//            if (APIConstants.OPERATION_SEQUENCE_TYPE_REQUEST.equals(op.getDirection())) {
+//                request.add(policyDTO);
+//            } else if (APIConstants.OPERATION_SEQUENCE_TYPE_RESPONSE.equals(op.getDirection())) {
+//                response.add(policyDTO);
+//            } else if (APIConstants.OPERATION_SEQUENCE_TYPE_FAULT.equals(op.getDirection())) {
+//                fault.add(policyDTO);
+//            }
+//        }
+//        dto.setRequest(request);
+//        dto.setResponse(response);
+//        dto.setFault(fault);
+//        return dto;
+//    }
+//
+//    private OperationPolicyDTO fromOperationPolicyToDTO(OperationPolicy operationPolicy) {
+//
+//        OperationPolicyDTO dto = new OperationPolicyDTO();
+//        dto.setPolicyName(operationPolicy.getPolicyName());
+//        dto.setPolicyVersion(operationPolicy.getPolicyVersion());
+//        dto.setPolicyId(operationPolicy.getPolicyId());
+//        dto.setParameters(operationPolicy.getParameters().toString());
+//        return dto;
+//    }
 
     private List<String> getCategoryNames(List<APICategory> apiCategories) {
 
@@ -206,48 +217,48 @@ public class APIDataTypeMapper {
         return businessInformation;
     }
 
-    private void getRevisionDetails(APIDataType apiDataType, String apiId) {
-        List<APIRevision> apiDeployedRevisions = new ArrayList<>();
-        try {
-            List<APIRevision> apiRevisions = apiProvider.getAPIRevisions(apiId);
-            for (APIRevision apiRevision : apiRevisions) {
-                if (!apiRevision.getApiRevisionDeploymentList().isEmpty()) {
-                    apiDeployedRevisions.add(apiRevision);
-                }
-            }
-        } catch (APIManagementException e) {
-            // todo: handle exception
-        }
-        if (!apiDeployedRevisions.isEmpty()) {
-            APIRevision deployedRevision = apiDeployedRevisions.get(0);
-            Revision revision = new Revision();
-            revision.setId(deployedRevision.getRevisionUUID());
-            revision.setCreatedTime(parseStringToDate(deployedRevision.getCreatedTime()).toString());
-            revision.setDisplayName("Revision " + deployedRevision.getId());
-            revision.setDescription(deployedRevision.getDescription());
-
-            List<Deployment> revisionDeployments = new ArrayList<>();
-            if (deployedRevision.getApiRevisionDeploymentList() != null) {
-                for (APIRevisionDeployment apiRevisionDeployment : deployedRevision.getApiRevisionDeploymentList()) {
-                    revisionDeployments.add(fromAPIRevisionDeploymentToDeployment(apiRevisionDeployment));
-                }
-            }
-
-            apiDataType.setRevision(revision);
-            apiDataType.setDeployments(revisionDeployments);
-        }
-    }
-
-    private Deployment fromAPIRevisionDeploymentToDeployment(
-            APIRevisionDeployment apiRevisionDeployment) {
-        Deployment revisionDeployment = new Deployment();
-        revisionDeployment.setName(apiRevisionDeployment.getDeployment());
-        revisionDeployment.setVhost(apiRevisionDeployment.getVhost());
-        if (apiRevisionDeployment.getRevisionUUID() != null) {
-            revisionDeployment.setRevisionId(apiRevisionDeployment.getRevisionUUID());
-        }
-        return revisionDeployment;
-    }
+//    Not available in 3.2.0
+//    private void getRevisionDetails(APIDataType apiDataType, String apiId) {
+//        List<APIRevision> apiDeployedRevisions = new ArrayList<>();
+//        try {
+//            List<APIRevision> apiRevisions = apiProvider.getAPIRevisions(apiId);
+//            for (APIRevision apiRevision : apiRevisions) {
+//                if (!apiRevision.getApiRevisionDeploymentList().isEmpty()) {
+//                    apiDeployedRevisions.add(apiRevision);
+//                }
+//            }
+//        } catch (APIManagementException e) {
+//        }
+//        if (!apiDeployedRevisions.isEmpty()) {
+//            APIRevision deployedRevision = apiDeployedRevisions.get(0);
+//            Revision revision = new Revision();
+//            revision.setId(deployedRevision.getRevisionUUID());
+//            revision.setCreatedTime(parseStringToDate(deployedRevision.getCreatedTime()).toString());
+//            revision.setDisplayName("Revision " + deployedRevision.getId());
+//            revision.setDescription(deployedRevision.getDescription());
+//
+//            List<Deployment> revisionDeployments = new ArrayList<>();
+//            if (deployedRevision.getApiRevisionDeploymentList() != null) {
+//                for (APIRevisionDeployment apiRevisionDeployment : deployedRevision.getApiRevisionDeploymentList()) {
+//                    revisionDeployments.add(fromAPIRevisionDeploymentToDeployment(apiRevisionDeployment));
+//                }
+//            }
+//
+//            apiDataType.setRevision(revision);
+//            apiDataType.setDeployments(revisionDeployments);
+//        }
+//    }
+//
+//    private Deployment fromAPIRevisionDeploymentToDeployment(
+//            APIRevisionDeployment apiRevisionDeployment) {
+//        Deployment revisionDeployment = new Deployment();
+//        revisionDeployment.setName(apiRevisionDeployment.getDeployment());
+//        revisionDeployment.setVhost(apiRevisionDeployment.getVhost());
+//        if (apiRevisionDeployment.getRevisionUUID() != null) {
+//            revisionDeployment.setRevisionId(apiRevisionDeployment.getRevisionUUID());
+//        }
+//        return revisionDeployment;
+//    }
 
     private Date parseStringToDate(String time) {
         try {
@@ -259,20 +270,20 @@ public class APIDataTypeMapper {
         }
     }
 
-    private String getAPIDefinition(String apiId) {
+    private String getAPIDefinition(API api) {
         String apiDefinition = "";
         try {
-            apiDefinition = apiProvider.getOpenAPIDefinition(apiId, organization);
+            apiDefinition = apiProvider.getOpenAPIDefinition(api.getId());
         } catch (APIManagementException e) {
             return apiDefinition;
         }
         return apiDefinition;
     }
 
-    private String getThumbnail(String apiId) {
+    private String getThumbnail(API api) {
         String base64EncodedThumbnail = "";
         try {
-            ResourceFile thumbnail = apiProvider.getIcon(apiId, organization);
+            ResourceFile thumbnail = apiProvider.getIcon(api.getId());
             InputStream thumbnailStream = thumbnail.getContent();
             byte[] bytes = IOUtils.toByteArray(thumbnailStream);
             base64EncodedThumbnail = Base64.getEncoder().encodeToString(bytes);
@@ -286,7 +297,7 @@ public class APIDataTypeMapper {
         List<CertificateDTO> certificateDTOList = new ArrayList<>();
         try {
             List<ClientCertificateDTO> certificates = apiProvider
-                    .searchClientCertificates(tenantId, null, api.getId(), organization);
+                    .searchClientCertificates(tenantId, null, api.getId());
             for (ClientCertificateDTO certificate : certificates) {
                 CertificateDTO certificateDTO = new CertificateDTO();
                 certificateDTO.setAlias(certificate.getAlias());
@@ -320,7 +331,7 @@ public class APIDataTypeMapper {
                     CertificateDTO certificateDTO = new CertificateDTO();
                     certificateDTO.setAlias(certificate.getAlias());
                     certificateDTO.setEndpoint(endpoint);
-                    certificateDTO.setCertificate(certificate.getCertificate());
+                    certificateDTO.setCertificate(getEndpointCertificateContent(certificate.getAlias()));
                     certificateDTOList.add(certificateDTO);
                 }
             }
@@ -330,33 +341,49 @@ public class APIDataTypeMapper {
         return certificateDTOList;
     }
 
-    private List<CommentDTO> getComments(String apiId) {
-        List<CommentDTO> commentDTOList = new ArrayList<>();
+    // This method is only required in APIM 3.2.0
+    private String getEndpointCertificateContent(String alias) throws APIManagementException {
+        String cert = "";
+        ByteArrayInputStream content = apiProvider.getCertificateContent(alias);
         try {
-            ApiTypeWrapper apiTypeWrapper = apiProvider.getAPIorAPIProductByUUID(apiId, organization);
-            CommentList comments = apiProvider.getComments(apiTypeWrapper, null, 100, 0);
-            commentDTOList = fromCommentListToCommentDTOList(comments);
-        } catch (APIManagementException e) {
-            return commentDTOList;
+            String stringContent = new String(Base64.getEncoder().encode(IOUtils.toByteArray(content)));
+            String certificateContent = APIConstants.BEGIN_CERTIFICATE_STRING.concat(stringContent).concat("\n"
+            ).concat(APIConstants.END_CERTIFICATE_STRING);
+            cert = Base64.getEncoder().encodeToString(certificateContent.getBytes());
+        } catch (IOException e) {
+            return cert;
         }
-        return commentDTOList;
+        return cert;
     }
 
-    private List<CommentDTO> fromCommentListToCommentDTOList(CommentList comments) {
-        List<CommentDTO> commentDTOList = new ArrayList<>();
-        for (Comment comment : comments.getList()) {
-            CommentDTO commentDTO = new CommentDTO();
-            commentDTO.setId(comment.getId());
-            commentDTO.setContent(comment.getText());
-            commentDTO.setUser(comment.getUser());
-            commentDTO.setEntrypoint(comment.getEntryPoint());
-            commentDTO.setCategory(comment.getCategory());
-            commentDTO.setParentCommentId(comment.getParentCommentID());
-            commentDTO.setReplies(fromCommentListToCommentDTOList(comment.getReplies()));
-            commentDTOList.add(commentDTO);
-        }
-        return commentDTOList;
-    }
+// Not available in 3.2.0
+//    private List<CommentDTO> getComments(String apiId) {
+//        List<CommentDTO> commentDTOList = new ArrayList<>();
+//        try {
+//            ApiTypeWrapper apiTypeWrapper = apiProvider.getAPIorAPIProductByUUID(apiId, organization);
+//            CommentList comments = apiProvider.getComments(apiTypeWrapper, null, 100, 0);
+//            commentDTOList = fromCommentListToCommentDTOList(comments);
+//        } catch (APIManagementException e) {
+//            return commentDTOList;
+//        }
+//        return commentDTOList;
+//    }
+
+//    private List<CommentDTO> fromCommentListToCommentDTOList(CommentList comments) {
+//        List<CommentDTO> commentDTOList = new ArrayList<>();
+//        for (Comment comment : comments.getList()) {
+//            CommentDTO commentDTO = new CommentDTO();
+//            commentDTO.setId(comment.getId());
+//            commentDTO.setContent(comment.getText());
+//            commentDTO.setUser(comment.getUser());
+//            commentDTO.setEntrypoint(comment.getEntryPoint());
+//            commentDTO.setCategory(comment.getCategory());
+//            commentDTO.setParentCommentId(comment.getParentCommentID());
+//            commentDTO.setReplies(fromCommentListToCommentDTOList(comment.getReplies()));
+//            commentDTOList.add(commentDTO);
+//        }
+//        return commentDTOList;
+//    }
 
     private CorsDTO getCorsConfiguration(API api) {
         CORSConfiguration corsConfiguration = api.getCorsConfiguration();
