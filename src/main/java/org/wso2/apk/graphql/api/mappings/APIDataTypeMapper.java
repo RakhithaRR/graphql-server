@@ -5,10 +5,8 @@ import com.google.gson.JsonParser;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.wso2.apk.graphql.api.datatypes.APIDataType;
-import org.wso2.apk.graphql.api.models.BusinessInformation;
-import org.wso2.apk.graphql.api.models.CertificateDTO;
-import org.wso2.apk.graphql.api.models.CorsDTO;
-import org.wso2.apk.graphql.api.models.OperationDTO;
+import org.wso2.apk.graphql.api.models.*;
+import org.wso2.carbon.apimgt.api.APIConsumer;
 import org.wso2.carbon.apimgt.api.APIDefinition;
 import org.wso2.carbon.apimgt.api.APIManagementException;
 import org.wso2.carbon.apimgt.api.APIProvider;
@@ -18,6 +16,7 @@ import org.wso2.carbon.apimgt.api.model.*;
 import org.wso2.carbon.apimgt.impl.APIConstants;
 import org.wso2.carbon.apimgt.impl.definitions.OASParserUtil;
 import org.wso2.carbon.apimgt.impl.utils.APIUtil;
+import org.wso2.carbon.apimgt.rest.api.util.utils.RestApiUtil;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -82,7 +81,7 @@ public class APIDataTypeMapper {
         apiDataType.setThumbnail(getThumbnail(api));
         apiDataType.setClientCertificates(getClientCertificates(api));
         apiDataType.setEndpointCertificates(getEndpointCertificates(api.getEndpointConfig()));
-//        apiDataType.setComments(getComments(api.getUUID()));
+        apiDataType.setComments(getComments(api.getUUID()));
         apiDataType.setCorsConfiguration(getCorsConfiguration(api));
         apiDataType.setMediationPolicies(mediationMapper.getMediationPolicies(api));
 
@@ -353,34 +352,30 @@ public class APIDataTypeMapper {
         return cert;
     }
 
-// Not available in 3.2.0
-//    private List<CommentDTO> getComments(String apiId) {
-//        List<CommentDTO> commentDTOList = new ArrayList<>();
-//        try {
-//            ApiTypeWrapper apiTypeWrapper = apiProvider.getAPIorAPIProductByUUID(apiId, organization);
-//            CommentList comments = apiProvider.getComments(apiTypeWrapper, null, 100, 0);
-//            commentDTOList = fromCommentListToCommentDTOList(comments);
-//        } catch (APIManagementException e) {
-//            return commentDTOList;
-//        }
-//        return commentDTOList;
-//    }
+    private List<CommentDTO> getComments(String apiId) {
+        List<CommentDTO> commentDTOList = new ArrayList<>();
+        try {
+            APIConsumer apiConsumer = RestApiUtil.getConsumer(adminUsername);
+            ApiTypeWrapper apiTypeWrapper = apiConsumer.getAPIorAPIProductByUUID(apiId, organization);
+            Comment[] comments = apiConsumer.getComments(apiTypeWrapper);
+            commentDTOList = fromCommentListToCommentDTOList(comments);
+        } catch (APIManagementException e) {
+            return commentDTOList;
+        }
+        return commentDTOList;
+    }
 
-//    private List<CommentDTO> fromCommentListToCommentDTOList(CommentList comments) {
-//        List<CommentDTO> commentDTOList = new ArrayList<>();
-//        for (Comment comment : comments.getList()) {
-//            CommentDTO commentDTO = new CommentDTO();
-//            commentDTO.setId(comment.getId());
-//            commentDTO.setContent(comment.getText());
-//            commentDTO.setUser(comment.getUser());
-//            commentDTO.setEntrypoint(comment.getEntryPoint());
-//            commentDTO.setCategory(comment.getCategory());
-//            commentDTO.setParentCommentId(comment.getParentCommentID());
-//            commentDTO.setReplies(fromCommentListToCommentDTOList(comment.getReplies()));
-//            commentDTOList.add(commentDTO);
-//        }
-//        return commentDTOList;
-//    }
+    private List<CommentDTO> fromCommentListToCommentDTOList(Comment[] comments) {
+        List<CommentDTO> commentDTOList = new ArrayList<>();
+        for (Comment comment : comments) {
+            CommentDTO commentDTO = new CommentDTO();
+            commentDTO.setId(comment.getId());
+            commentDTO.setContent(comment.getText());
+            commentDTO.setUser(comment.getUser());
+            commentDTOList.add(commentDTO);
+        }
+        return commentDTOList;
+    }
 
     private CorsDTO getCorsConfiguration(API api) {
         CORSConfiguration corsConfiguration = api.getCorsConfiguration();

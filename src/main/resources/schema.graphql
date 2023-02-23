@@ -92,11 +92,7 @@ type Certificate {
 type Comment {
     id: String
     content: String
-    category: String
-    entrypoint: String
     user: String
-    parentCommentId: String
-    replies: [Comment]
 }
 
 type CorsConfiguration {
