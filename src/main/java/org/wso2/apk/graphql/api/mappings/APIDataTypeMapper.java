@@ -5,7 +5,10 @@ import com.google.gson.JsonParser;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.wso2.apk.graphql.api.datatypes.APIDataType;
-import org.wso2.apk.graphql.api.models.*;
+import org.wso2.apk.graphql.api.models.BusinessInformation;
+import org.wso2.apk.graphql.api.models.CertificateDTO;
+import org.wso2.apk.graphql.api.models.CorsDTO;
+import org.wso2.apk.graphql.api.models.OperationDTO;
 import org.wso2.carbon.apimgt.api.APIDefinition;
 import org.wso2.carbon.apimgt.api.APIManagementException;
 import org.wso2.carbon.apimgt.api.APIProvider;
@@ -15,16 +18,10 @@ import org.wso2.carbon.apimgt.api.model.*;
 import org.wso2.carbon.apimgt.impl.APIConstants;
 import org.wso2.carbon.apimgt.impl.definitions.OASParserUtil;
 import org.wso2.carbon.apimgt.impl.utils.APIUtil;
-//import org.wso2.carbon.apimgt.impl.utils.OperationPolicyComparator;
-import org.wso2.carbon.apimgt.rest.api.util.utils.RestApiUtil;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -260,15 +257,15 @@ public class APIDataTypeMapper {
 //        return revisionDeployment;
 //    }
 
-    private Date parseStringToDate(String time) {
-        try {
-            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-            return dateFormat.parse(time);
-        } catch (ParseException e) {
-            return null;
-            // todo: handle exception
-        }
-    }
+//    private Date parseStringToDate(String time) {
+//        try {
+//            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+//            return dateFormat.parse(time);
+//        } catch (ParseException e) {
+//            return null;
+//            // todo: handle exception
+//        }
+//    }
 
     private String getAPIDefinition(API api) {
         String apiDefinition = "";

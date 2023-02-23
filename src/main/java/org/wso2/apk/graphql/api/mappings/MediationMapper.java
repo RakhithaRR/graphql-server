@@ -19,9 +19,9 @@ import java.util.List;
 import java.util.Map;
 
 public class MediationMapper {
-    private APIProvider apiProvider;
-    private String adminUsername;
-    private String organization;
+    private final APIProvider apiProvider;
+    private final String adminUsername;
+    private final String organization;
     private final int tenantId;
 
     public MediationMapper(APIProvider apiProvider, String adminUsername, String organization, int tenantId) {
@@ -63,10 +63,10 @@ public class MediationMapper {
                 api.getId(), tenantId);
         if (mediationPolicyAttributes != null) {
             String mediationPolicyUUID =
-                    mediationPolicyAttributes.containsKey("uuid") ? mediationPolicyAttributes.get("uuid") : null;
+                    mediationPolicyAttributes.getOrDefault("uuid", null);
             String mediationPolicyRegistryPath =
-                    mediationPolicyAttributes.containsKey("path") ? mediationPolicyAttributes.get("path") : null;
-            boolean sharedStatus = getSharedStatus(mediationPolicyRegistryPath, policyName);
+                    mediationPolicyAttributes.getOrDefault("path", null);
+            boolean sharedStatus = getSharedStatus(mediationPolicyRegistryPath);
             mediationPolicy.setId(mediationPolicyUUID);
             mediationPolicy.setShared(sharedStatus);
             try {
@@ -90,12 +90,9 @@ public class MediationMapper {
         return null;
     }
 
-    private boolean getSharedStatus(String resourcePath, String policyName) {
+    private boolean getSharedStatus(String resourcePath) {
 
-        if (null != resourcePath && resourcePath.contains(APIConstants.API_CUSTOM_SEQUENCE_LOCATION)) {
-            return true;
-        }
-        return false;
+        return null != resourcePath && resourcePath.contains(APIConstants.API_CUSTOM_SEQUENCE_LOCATION);
     }
 
     private String getPolicyContent(API api, String mediationPolicyId) throws APIManagementException {
