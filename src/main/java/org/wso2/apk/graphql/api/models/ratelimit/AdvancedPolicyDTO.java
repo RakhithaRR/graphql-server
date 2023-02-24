@@ -1,10 +1,13 @@
 package org.wso2.apk.graphql.api.models.ratelimit;
 
+import java.util.List;
+
 public class AdvancedPolicyDTO {
     private String id;
     private String name;
     private String description;
     private ThrottleLimitDTO defaultLimit;
+    private List<ConditionalGroupDTO> conditionalGroups;
 
     public String getId() {
         return id;
@@ -36,5 +39,13 @@ public class AdvancedPolicyDTO {
 
     public void setDefaultLimit(ThrottleLimitDTO defaultLimit) {
         this.defaultLimit = defaultLimit;
+    }
+
+    public List<ConditionalGroupDTO> getConditionalGroups() {
+        return conditionalGroups;
+    }
+
+    public void setConditionalGroups(List<ConditionalGroupDTO> conditionalGroups) {
+        this.conditionalGroups = conditionalGroups;
     }
 }

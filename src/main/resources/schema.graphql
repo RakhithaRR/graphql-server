@@ -125,6 +125,7 @@ type AdvancedPolicy {
     name: String
     description: String
     defaultLimit: DefaultLimit
+    conditionalGroups: [ConditionalGroup]
 }
 
 type DefaultLimit {
@@ -143,4 +144,41 @@ type BandwidthLimit{
     unitTime: Int
     dataAmount: Int
     dataUnit: String
+}
+
+type ConditionalGroup {
+    description: String
+    defaultLimit: DefaultLimit
+    conditions: [Condition]
+}
+
+type Condition {
+    type: String
+    invertCondition: Boolean
+    ipCondition: IPCondition
+    headerCondition: HeaderCondition
+    queryParameterCondition: QueryParameterCondition
+    jwtClaimCondition: JWTClaimCondition
+}
+
+type IPCondition {
+    type: String
+    specificIP: String
+    startingIP: String
+    endingIP: String
+}
+
+type HeaderCondition {
+    headerName: String
+    headerValue: String
+}
+
+type QueryParameterCondition {
+    parameterName: String
+    parameterValue: String
+}
+
+type JWTClaimCondition {
+    claimUrl: String
+    claimAttribute: String
 }

@@ -1,9 +1,6 @@
 package org.wso2.apk.graphql.api.mappings;
 
-import org.wso2.apk.graphql.api.models.ratelimit.AdvancedPolicyDTO;
-import org.wso2.apk.graphql.api.models.ratelimit.BandwidthDTO;
-import org.wso2.apk.graphql.api.models.ratelimit.RequestLimitDTO;
-import org.wso2.apk.graphql.api.models.ratelimit.ThrottleLimitDTO;
+import org.wso2.apk.graphql.api.models.ratelimit.*;
 import org.wso2.carbon.apimgt.api.APIDefinition;
 import org.wso2.carbon.apimgt.api.APIManagementException;
 import org.wso2.carbon.apimgt.api.APIProvider;
@@ -80,6 +77,13 @@ public class AdvancedPolicyMapper {
         if (apiPolicy.getDefaultQuotaPolicy() != null) {
             advancedPolicyDTO.setDefaultLimit(getAdvancedPolicyQuotaDetails(apiPolicy.getDefaultQuotaPolicy()));
         }
+        if (apiPolicy.getPipelines() != null) {
+            List<ConditionalGroupDTO> conditionalGroupDTOList = new ArrayList<>();
+            for (Pipeline pipeline : apiPolicy.getPipelines()) {
+                conditionalGroupDTOList.add(getConditionalGroupDetails(pipeline));
+            }
+            advancedPolicyDTO.setConditionalGroups(conditionalGroupDTOList);
+        }
         return advancedPolicyDTO;
     }
 
@@ -104,6 +108,7 @@ public class AdvancedPolicyMapper {
         requestLimitDTO.setUnitTime(requestCountLimit.getUnitTime());
         return requestLimitDTO;
     }
+
     private BandwidthDTO getBandwidthLimitDetails(BandwidthLimit bandwidthLimit) {
         BandwidthDTO bandwidthDTO = new BandwidthDTO();
         bandwidthDTO.setTimeUnit(bandwidthLimit.getTimeUnit());
@@ -111,5 +116,66 @@ public class AdvancedPolicyMapper {
         bandwidthDTO.setDataAmount(bandwidthLimit.getDataAmount());
         bandwidthDTO.setDataUnit(bandwidthLimit.getDataUnit());
         return bandwidthDTO;
+    }
+
+    private ConditionalGroupDTO getConditionalGroupDetails(Pipeline pipeline) {
+        ConditionalGroupDTO conditionalGroupDTO = new ConditionalGroupDTO();
+        conditionalGroupDTO.setDescription(pipeline.getDescription());
+        conditionalGroupDTO.setDefaultLimit(getAdvancedPolicyQuotaDetails(pipeline.getQuotaPolicy()));
+        if (pipeline.getConditions() != null) {
+            List<ConditionDTO> conditionDTOList = new ArrayList<>();
+            for (Condition condition : pipeline.getConditions()) {
+                conditionDTOList.add(getConditionDetails(condition));
+            }
+            conditionalGroupDTO.setConditions(conditionDTOList);
+        }
+        return conditionalGroupDTO;
+    }
+
+    private ConditionDTO getConditionDetails(Condition condition) {
+        ConditionDTO conditionDTO = new ConditionDTO();
+        conditionDTO.setInvertCondition(condition.isInvertCondition());
+        conditionDTO.setType(condition.getType());
+        if (condition instanceof IPCondition) {
+            conditionDTO.setIpCondition(getIPConditionDetails((IPCondition) condition));
+        } else if (condition instanceof HeaderCondition) {
+            conditionDTO.setHeaderCondition(getHeaderConditionDetails((HeaderCondition) condition));
+        } else if (condition instanceof JWTClaimsCondition) {
+            conditionDTO.setJwtClaimsCondition(getJWTClaimsConditionDetails((JWTClaimsCondition) condition));
+        } else if (condition instanceof QueryParameterCondition) {
+            conditionDTO.setQueryParameterCondition(getQueryParameterConditionDetails((QueryParameterCondition) condition));
+        }
+        return conditionDTO;
+    }
+
+    private IPConditionDTO getIPConditionDetails(IPCondition ipCondition) {
+        IPConditionDTO ipConditionDTO = new IPConditionDTO();
+        ipConditionDTO.setType(ipCondition.getType());
+        ipConditionDTO.setSpecificIP(ipCondition.getSpecificIP());
+        ipConditionDTO.setStartingIP(ipCondition.getStartingIP());
+        ipConditionDTO.setEndingIP(ipCondition.getEndingIP());
+        return ipConditionDTO;
+    }
+
+    private HeaderConditionDTO getHeaderConditionDetails(HeaderCondition headerCondition) {
+        HeaderConditionDTO headerConditionDTO = new HeaderConditionDTO();
+        headerConditionDTO.setHeaderName(headerCondition.getHeaderName());
+        headerConditionDTO.setHeaderValue(headerCondition.getValue());
+        return headerConditionDTO;
+    }
+
+    private JWTClaimsConditionDTO getJWTClaimsConditionDetails(JWTClaimsCondition jwtClaimsCondition) {
+        JWTClaimsConditionDTO jwtClaimsConditionDTO = new JWTClaimsConditionDTO();
+        jwtClaimsConditionDTO.setClaimUrl(jwtClaimsCondition.getClaimUrl());
+        jwtClaimsConditionDTO.setClaimAttribute(jwtClaimsCondition.getAttribute());
+        return jwtClaimsConditionDTO;
+    }
+
+    private QueryParameterConditionDTO getQueryParameterConditionDetails(QueryParameterCondition
+                                                                                 queryParameterCondition) {
+        QueryParameterConditionDTO queryParameterConditionDTO = new QueryParameterConditionDTO();
+        queryParameterConditionDTO.setParameterName(queryParameterCondition.getParameter());
+        queryParameterConditionDTO.setParameterValue(queryParameterCondition.getValue());
+        return queryParameterConditionDTO;
     }
 }
