@@ -16,6 +16,16 @@ public class APIFetcher {
         };
     }
 
+    public DataFetcher getAPIsByOrganization() {
+        return dataFetchingEnvironment -> {
+            try {
+                return APIService.getAPIsByOrganization(dataFetchingEnvironment.getArgument("org"));
+            } catch (APIManagementException e) {
+                throw new graphql.GraphQLException(e.getMessage());
+            }
+        };
+    }
+
     public DataFetcher getAPI() {
         return dataFetchingEnvironment -> APIService.getAPI(dataFetchingEnvironment.getArgument("id"));
     }

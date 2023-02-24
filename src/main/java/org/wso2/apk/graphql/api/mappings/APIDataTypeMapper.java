@@ -16,6 +16,7 @@ import org.wso2.carbon.apimgt.api.model.*;
 import org.wso2.carbon.apimgt.impl.APIConstants;
 import org.wso2.carbon.apimgt.impl.definitions.OASParserUtil;
 import org.wso2.carbon.apimgt.impl.utils.APIUtil;
+import org.wso2.carbon.apimgt.rest.api.util.RestApiConstants;
 import org.wso2.carbon.apimgt.rest.api.util.utils.RestApiUtil;
 
 import java.io.ByteArrayInputStream;
@@ -54,7 +55,7 @@ public class APIDataTypeMapper {
         apiDataType.setId(api.getUUID());
         apiDataType.setName(api.getId().getName());
         apiDataType.setVersion(api.getId().getVersion());
-        apiDataType.setContext(api.getContextTemplate());
+        apiDataType.setContext(getContext(api.getContextTemplate()));
         apiDataType.setProvider(api.getId().getProviderName());
         apiDataType.setOrganization(organization);
         apiDataType.setType(api.getType());
@@ -72,6 +73,7 @@ public class APIDataTypeMapper {
         }
         apiDataType.setTags(new ArrayList<>(api.getTags()));
         apiDataType.setOperations(getOperationsFromSwaggerDef(api));
+        apiDataType.setAuthorizationHeader(api.getAuthorizationHeader());
         // Attributes required for Backoffice API
         apiDataType.setCategories(getCategories(api.getApiCategories()));
         apiDataType.setLifecycleStatus(api.getStatus());
@@ -90,6 +92,14 @@ public class APIDataTypeMapper {
         apiDataType.setGraphQLSchema(getGraphqlSchemaFromAPI(api));
 
         return apiDataType;
+    }
+
+    private String getContext(String context) {
+        if (context.endsWith("/" + RestApiConstants.API_VERSION_PARAM)) {
+            return context.replace("/" + RestApiConstants.API_VERSION_PARAM, "");
+        } else {
+            return context;
+        }
     }
 
     private List<OperationDTO> getOperationsFromSwaggerDef(API api) throws APIManagementException {

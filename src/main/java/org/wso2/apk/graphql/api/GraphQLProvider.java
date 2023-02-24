@@ -20,6 +20,7 @@ public class GraphQLProvider {
         return RuntimeWiring.newRuntimeWiring()
                 .type(queryAllAPIs())
                 .type(queryAPI())
+                .type(queryAPIsByOrganization())
                 .build();
     }
 
@@ -31,5 +32,10 @@ public class GraphQLProvider {
     private TypeRuntimeWiring.Builder queryAPI() {
         return TypeRuntimeWiring.newTypeWiring("Query")
                 .dataFetcher("getAPI", new APIFetcher().getAPI());
+    }
+
+    private TypeRuntimeWiring.Builder queryAPIsByOrganization() {
+        return TypeRuntimeWiring.newTypeWiring("Query")
+                .dataFetcher("getAPIsByOrganization", new APIFetcher().getAPIsByOrganization());
     }
 }

@@ -36,6 +36,7 @@ public class APIDataType {
     private CorsDTO corsConfiguration;
     private List<MediationDTO> mediationPolicies;
     private List<AdvancedPolicyDTO> advancedPolicies;
+    private String authorizationHeader;
 
     public String getId() {
         return id;
@@ -275,5 +276,13 @@ public class APIDataType {
 
     public void setGraphQLSchema(String graphQLSchema) {
         this.graphQLSchema = graphQLSchema;
+    }
+
+    public String getAuthorizationHeader() {
+        return authorizationHeader;
+    }
+
+    public void setAuthorizationHeader(String authorizationHeader) {
+        this.authorizationHeader = authorizationHeader;
     }
 }

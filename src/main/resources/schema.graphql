@@ -1,6 +1,7 @@
 type Query {
     getAPIs: APIList
     getAPI(id: String!): API
+    getAPIsByOrganization(org: String!): APIList
 }
 
 type APIList {
@@ -29,6 +30,7 @@ type API {
     createdTime: String
     lastUpdatedTime: String
     operations: [Operation]
+    authorizationHeader: String
     apiUsagePolicy: String
     monetization: String
     businessInformation: BusinessInformation
