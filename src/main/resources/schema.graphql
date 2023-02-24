@@ -46,6 +46,7 @@ type API {
     corsConfiguration: CorsConfiguration
     mediationPolicies: [MediationPolicy]
     advancedPolicies: [AdvancedPolicy]
+    designConfigurations: DesignConfiguration
 }
 
 type Operation {
@@ -183,4 +184,13 @@ type QueryParameterCondition {
 type JWTClaimCondition {
     claimUrl: String
     claimAttribute: String
+}
+
+type DesignConfiguration {
+    accessControl: String
+    accessControlRoles: [String]
+    visibility: String
+    visibleRoles: [String]
+    visibleTenants: [String]
+    isDefaultVersion: Boolean
 }

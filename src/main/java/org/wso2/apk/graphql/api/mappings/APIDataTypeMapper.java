@@ -90,6 +90,7 @@ public class APIDataTypeMapper {
         apiDataType.setMediationPolicies(mediationMapper.getMediationPolicies(api));
         apiDataType.setAdvancedPolicies(advancedPolicyMapper.getAdvancedPolicies(api));
         apiDataType.setGraphQLSchema(getGraphqlSchemaFromAPI(api));
+        apiDataType.setDesignConfigurations(getDesignConfigDetails(api));
 
         return apiDataType;
     }
@@ -398,5 +399,22 @@ public class APIDataTypeMapper {
         corsDTO.setAccessControlAllowHeaders(corsConfiguration.getAccessControlAllowHeaders());
         corsDTO.setAccessControlAllowMethods(corsConfiguration.getAccessControlAllowMethods());
         return corsDTO;
+    }
+
+    private DesignConfigDTO getDesignConfigDetails(API api) {
+        DesignConfigDTO designConfigDTO = new DesignConfigDTO();
+        designConfigDTO.setAccessControl(api.getAccessControl());
+        if (api.getAccessControlRoles() != null) {
+            designConfigDTO.setAccessControlRoles(Arrays.asList(api.getAccessControlRoles().split(",")));
+        }
+        designConfigDTO.setVisibility(api.getVisibility());
+        if (api.getVisibleRoles() != null) {
+            designConfigDTO.setVisibleRoles(Arrays.asList(api.getVisibleRoles().split(",")));
+        }
+        if (api.getVisibleTenants() != null) {
+            designConfigDTO.setVisibleTenants(Arrays.asList(api.getVisibleTenants().split(",")));
+        }
+        designConfigDTO.setDefaultVersion(api.isDefaultVersion());
+        return designConfigDTO;
     }
 }

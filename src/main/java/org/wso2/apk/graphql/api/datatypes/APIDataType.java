@@ -37,6 +37,7 @@ public class APIDataType {
     private List<MediationDTO> mediationPolicies;
     private List<AdvancedPolicyDTO> advancedPolicies;
     private String authorizationHeader;
+    private DesignConfigDTO designConfigurations;
 
     public String getId() {
         return id;
@@ -284,5 +285,13 @@ public class APIDataType {
 
     public void setAuthorizationHeader(String authorizationHeader) {
         this.authorizationHeader = authorizationHeader;
+    }
+
+    public DesignConfigDTO getDesignConfigurations() {
+        return designConfigurations;
+    }
+
+    public void setDesignConfigurations(DesignConfigDTO designConfigurations) {
+        this.designConfigurations = designConfigurations;
     }
 }
