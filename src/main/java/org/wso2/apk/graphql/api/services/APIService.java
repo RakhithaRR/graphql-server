@@ -15,24 +15,20 @@ import java.util.List;
 
 
 public class APIService {
-    public static APIListDTO getAPIs() {
+    public static APIListDTO getAPIs() throws APIManagementException {
         List<Tenant> organizations = CommonUtils.loadTenants();
         APIListDTO apiListDTO = new APIListDTO();
         List<APIDataType> apiList = new ArrayList<>();
         for (Tenant organization : organizations) {
             String adminUsername = organization.getAdminName();
             String organizationName = organization.getDomain();
-            try {
-                APIProvider apiProvider = RestApiUtil.getProvider(adminUsername);
-                APIDataTypeMapper apiDataTypeMapper = new APIDataTypeMapper(apiProvider, adminUsername,
-                        organizationName);
-                List<API> apis = apiProvider.getAllAPIs();
-                for (API api : apis) {
-                    API detailedAPI = apiProvider.getAPIbyUUID(api.getUUID(), organizationName);
-                    apiList.add(apiDataTypeMapper.mapAPIToAPIDataType(detailedAPI));
-                }
-            } catch (APIManagementException e) {
-                return null;
+            APIProvider apiProvider = RestApiUtil.getProvider(adminUsername);
+            APIDataTypeMapper apiDataTypeMapper = new APIDataTypeMapper(apiProvider, adminUsername,
+                    organizationName);
+            List<API> apis = apiProvider.getAllAPIs();
+            for (API api : apis) {
+                API detailedAPI = apiProvider.getAPIbyUUID(api.getUUID(), organizationName);
+                apiList.add(apiDataTypeMapper.mapAPIToAPIDataType(detailedAPI));
             }
         }
         apiListDTO.setCount(apiList.size());

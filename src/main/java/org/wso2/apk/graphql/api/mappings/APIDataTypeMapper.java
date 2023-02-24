@@ -48,7 +48,7 @@ public class APIDataTypeMapper {
     }
 
 
-    public APIDataType mapAPIToAPIDataType(API api) {
+    public APIDataType mapAPIToAPIDataType(API api) throws APIManagementException {
         APIDataType apiDataType = new APIDataType();
         // Attributes required for runtime API
         apiDataType.setId(api.getUUID());
@@ -92,39 +92,35 @@ public class APIDataTypeMapper {
         return apiDataType;
     }
 
-    private List<OperationDTO> getOperationsFromSwaggerDef(API api) {
+    private List<OperationDTO> getOperationsFromSwaggerDef(API api) throws APIManagementException {
         List<OperationDTO> operationsDTOList = new ArrayList<>();
         if (!"WS".equals(api.getType())) {
-            try {
-                String swaggerDefinition;
-                if (api.getSwaggerDefinition() != null) {
-                    swaggerDefinition = api.getSwaggerDefinition();
-                } else {
-                    swaggerDefinition = apiProvider.getOpenAPIDefinition(api.getId());
-                }
-                APIDefinition apiDefinition = OASParserUtil.getOASParser(swaggerDefinition);
-                Set<URITemplate> uriTemplates;
-                if (APIConstants.GRAPHQL_API.equals(api.getType())) {
-                    uriTemplates = api.getUriTemplates();
-                } else {
-                    uriTemplates = apiDefinition.getURITemplates(swaggerDefinition);
-                }
+            String swaggerDefinition;
+            if (api.getSwaggerDefinition() != null) {
+                swaggerDefinition = api.getSwaggerDefinition();
+            } else {
+                swaggerDefinition = apiProvider.getOpenAPIDefinition(api.getId());
+            }
+            APIDefinition apiDefinition = OASParserUtil.getOASParser(swaggerDefinition);
+            Set<URITemplate> uriTemplates;
+            if (APIConstants.GRAPHQL_API.equals(api.getType())) {
+                uriTemplates = api.getUriTemplates();
+            } else {
+                uriTemplates = apiDefinition.getURITemplates(swaggerDefinition);
+            }
 
-                if (!StringUtils.isEmpty(swaggerDefinition)) {
-                    for (URITemplate uriTemplate : uriTemplates) {
-                        OperationDTO operationsDTO = getOperationFromURITemplate(uriTemplate, swaggerDefinition);
-                        operationsDTOList.add(operationsDTO);
-                    }
+            if (!StringUtils.isEmpty(swaggerDefinition)) {
+                for (URITemplate uriTemplate : uriTemplates) {
+                    OperationDTO operationsDTO = getOperationFromURITemplate(uriTemplate, swaggerDefinition);
+                    operationsDTOList.add(operationsDTO);
                 }
+            }
 //            Not available in 3.2.0
 //            setOperationPoliciesToOperationsDTO(api, operationsDTOList);
-                return operationsDTOList;
-            } catch (APIManagementException e) {
-                return null;
-            }
         } else {
             return operationsDTOList;
         }
+        return operationsDTOList;
     }
 
     private OperationDTO getOperationFromURITemplate(URITemplate uriTemplate, String definition)
@@ -279,62 +275,50 @@ public class APIDataTypeMapper {
 //        }
 //    }
 
-    private String getAPIDefinition(API api) {
-        String apiDefinition = "";
-        try {
-            apiDefinition = apiProvider.getOpenAPIDefinition(api.getId());
-        } catch (APIManagementException e) {
-            //todo: handle exception
-        }
-        return apiDefinition;
+    private String getAPIDefinition(API api) throws APIManagementException {
+        return apiProvider.getOpenAPIDefinition(api.getId());
     }
 
-    private String getGraphqlSchemaFromAPI(API api) {
+    private String getGraphqlSchemaFromAPI(API api) throws APIManagementException {
         String graphqlSchema = "";
         if (!APIConstants.GRAPHQL_API.equals(api.getType())) {
             return graphqlSchema;
         }
-        try {
-            graphqlSchema = apiProvider.getGraphqlSchema(api.getId());
-        } catch (APIManagementException e) {
-            //todo: handle exception
-        }
+        graphqlSchema = apiProvider.getGraphqlSchema(api.getId());
         return graphqlSchema;
     }
 
-    private String getThumbnail(API api) {
-        String base64EncodedThumbnail = "";
+    private String getThumbnail(API api) throws APIManagementException {
+        String base64EncodedThumbnail;
         try {
             ResourceFile thumbnail = apiProvider.getIcon(api.getId());
+            if (thumbnail == null) {
+                return null;
+            }
             InputStream thumbnailStream = thumbnail.getContent();
             byte[] bytes = IOUtils.toByteArray(thumbnailStream);
             base64EncodedThumbnail = Base64.getEncoder().encodeToString(bytes);
             return base64EncodedThumbnail;
         } catch (Exception e) {
-            return base64EncodedThumbnail;
+            throw new APIManagementException("Error while getting thumbnail for API " + api.getId().getApiName(), e);
         }
     }
 
-    private List<CertificateDTO> getClientCertificates(API api) {
+    private List<CertificateDTO> getClientCertificates(API api) throws APIManagementException {
         List<CertificateDTO> certificateDTOList = new ArrayList<>();
-        try {
-            List<ClientCertificateDTO> certificates = apiProvider
-                    .searchClientCertificates(tenantId, null, api.getId());
-            for (ClientCertificateDTO certificate : certificates) {
-                CertificateDTO certificateDTO = new CertificateDTO();
-                certificateDTO.setAlias(certificate.getAlias());
-                certificateDTO.setApiId(certificate.getApiIdentifier().getUUID());
-                certificateDTO.setCertificate(certificate.getCertificate());
-                certificateDTO.setTierName(certificate.getTierName());
-                certificateDTOList.add(certificateDTO);
-            }
-        } catch (APIManagementException e) {
-            return certificateDTOList;
+        List<ClientCertificateDTO> certificates = apiProvider.searchClientCertificates(tenantId, null, api.getId());
+        for (ClientCertificateDTO certificate : certificates) {
+            CertificateDTO certificateDTO = new CertificateDTO();
+            certificateDTO.setAlias(certificate.getAlias());
+            certificateDTO.setApiId(certificate.getApiIdentifier().getUUID());
+            certificateDTO.setCertificate(certificate.getCertificate());
+            certificateDTO.setTierName(certificate.getTierName());
+            certificateDTOList.add(certificateDTO);
         }
         return certificateDTOList;
     }
 
-    private List<CertificateDTO> getEndpointCertificates(String config) {
+    private List<CertificateDTO> getEndpointCertificates(String config) throws APIManagementException {
         List<CertificateDTO> certificateDTOList = new ArrayList<>();
         Set<String> endpoints = new HashSet<>();
         if (config.isBlank()) {
@@ -345,27 +329,23 @@ public class APIDataTypeMapper {
         endpoints.add(endpointConfig.get("url").getAsString());
         endpointConfig = configObject.getAsJsonObject("sandbox_endpoints");
         endpoints.add(endpointConfig.get("url").getAsString());
-        try {
-            List<CertificateMetadataDTO> certificates;
-            for (String endpoint : endpoints) {
-                certificates = apiProvider.searchCertificates(tenantId, null, endpoint);
-                for (CertificateMetadataDTO certificate : certificates) {
-                    CertificateDTO certificateDTO = new CertificateDTO();
-                    certificateDTO.setAlias(certificate.getAlias());
-                    certificateDTO.setEndpoint(endpoint);
-                    certificateDTO.setCertificate(getEndpointCertificateContent(certificate.getAlias()));
-                    certificateDTOList.add(certificateDTO);
-                }
+        List<CertificateMetadataDTO> certificates;
+        for (String endpoint : endpoints) {
+            certificates = apiProvider.searchCertificates(tenantId, null, endpoint);
+            for (CertificateMetadataDTO certificate : certificates) {
+                CertificateDTO certificateDTO = new CertificateDTO();
+                certificateDTO.setAlias(certificate.getAlias());
+                certificateDTO.setEndpoint(endpoint);
+                certificateDTO.setCertificate(getEndpointCertificateContent(certificate.getAlias()));
+                certificateDTOList.add(certificateDTO);
             }
-        } catch (Exception e) {
-            return certificateDTOList;
         }
         return certificateDTOList;
     }
 
     // This method is only required in APIM 3.2.0
     private String getEndpointCertificateContent(String alias) throws APIManagementException {
-        String cert = "";
+        String cert;
         ByteArrayInputStream content = apiProvider.getCertificateContent(alias);
         try {
             String stringContent = new String(Base64.getEncoder().encode(IOUtils.toByteArray(content)));
@@ -373,21 +353,17 @@ public class APIDataTypeMapper {
             ).concat(APIConstants.END_CERTIFICATE_STRING);
             cert = Base64.getEncoder().encodeToString(certificateContent.getBytes());
         } catch (IOException e) {
-            return cert;
+            throw new APIManagementException("Error while getting certificate content for alias " + alias, e);
         }
         return cert;
     }
 
-    private List<CommentDTO> getComments(String apiId) {
-        List<CommentDTO> commentDTOList = new ArrayList<>();
-        try {
-            APIConsumer apiConsumer = RestApiUtil.getConsumer(adminUsername);
-            ApiTypeWrapper apiTypeWrapper = apiConsumer.getAPIorAPIProductByUUID(apiId, organization);
-            Comment[] comments = apiConsumer.getComments(apiTypeWrapper);
-            commentDTOList = fromCommentListToCommentDTOList(comments);
-        } catch (APIManagementException e) {
-            return commentDTOList;
-        }
+    private List<CommentDTO> getComments(String apiId) throws APIManagementException {
+        List<CommentDTO> commentDTOList;
+        APIConsumer apiConsumer = RestApiUtil.getConsumer(adminUsername);
+        ApiTypeWrapper apiTypeWrapper = apiConsumer.getAPIorAPIProductByUUID(apiId, organization);
+        Comment[] comments = apiConsumer.getComments(apiTypeWrapper);
+        commentDTOList = fromCommentListToCommentDTOList(comments);
         return commentDTOList;
     }
 
