@@ -19,7 +19,7 @@ public class APIDataType {
     private List<String> tags;
     private String endpointConfig;
     private List<OperationDTO> operations;
-    private List<String> categories;
+    private List<CategoryDTO> categories;
     private String lifecycleStatus;
     private String additionalProperties;
     private BusinessInformation businessInformation;
@@ -27,6 +27,7 @@ public class APIDataType {
     private List<Deployment> deployments;
     private List<DocumentDTO> documents;
     private String definition;
+    private String graphQLSchema;
     private String thumbnail;
     private List<CertificateDTO> clientCertificates;
     private List<CertificateDTO> endpointCertificates;
@@ -140,11 +141,11 @@ public class APIDataType {
         this.operations = operationDTOS;
     }
 
-    public List<String> getCategories() {
+    public List<CategoryDTO> getCategories() {
         return categories;
     }
 
-    public void setCategories(List<String> categories) {
+    public void setCategories(List<CategoryDTO> categories) {
         this.categories = categories;
     }
 
@@ -266,5 +267,13 @@ public class APIDataType {
 
     public void setAdvancedPolicies(List<AdvancedPolicyDTO> advancedPolicies) {
         this.advancedPolicies = advancedPolicies;
+    }
+
+    public String getGraphQLSchema() {
+        return graphQLSchema;
+    }
+
+    public void setGraphQLSchema(String graphQLSchema) {
+        this.graphQLSchema = graphQLSchema;
     }
 }

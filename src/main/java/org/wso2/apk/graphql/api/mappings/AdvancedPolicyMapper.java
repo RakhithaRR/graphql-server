@@ -31,6 +31,9 @@ public class AdvancedPolicyMapper {
 
     public List<AdvancedPolicyDTO> getAdvancedPolicies(API api) {
         List<AdvancedPolicyDTO> advancedPolicyDTOList = new ArrayList<>();
+        if ("WS".equals(api.getType())) {
+            return advancedPolicyDTOList;
+        }
         try {
             String swaggerDefinition;
             if (api.getSwaggerDefinition() != null) {

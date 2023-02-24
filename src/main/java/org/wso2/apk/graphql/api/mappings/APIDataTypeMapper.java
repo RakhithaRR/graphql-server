@@ -73,7 +73,7 @@ public class APIDataTypeMapper {
         apiDataType.setTags(new ArrayList<>(api.getTags()));
         apiDataType.setOperations(getOperationsFromSwaggerDef(api));
         // Attributes required for Backoffice API
-        apiDataType.setCategories(getCategoryNames(api.getApiCategories()));
+        apiDataType.setCategories(getCategories(api.getApiCategories()));
         apiDataType.setLifecycleStatus(api.getStatus());
         apiDataType.setAdditionalProperties(api.getAdditionalProperties().toJSONString());
         apiDataType.setDefinition(getAPIDefinition(api));
@@ -87,38 +87,43 @@ public class APIDataTypeMapper {
         apiDataType.setCorsConfiguration(getCorsConfiguration(api));
         apiDataType.setMediationPolicies(mediationMapper.getMediationPolicies(api));
         apiDataType.setAdvancedPolicies(advancedPolicyMapper.getAdvancedPolicies(api));
+        apiDataType.setGraphQLSchema(getGraphqlSchemaFromAPI(api));
 
         return apiDataType;
     }
 
     private List<OperationDTO> getOperationsFromSwaggerDef(API api) {
-        try {
-            String swaggerDefinition;
-            if (api.getSwaggerDefinition() != null) {
-                swaggerDefinition = api.getSwaggerDefinition();
-            } else {
-                swaggerDefinition = apiProvider.getOpenAPIDefinition(api.getId());
-            }
-            APIDefinition apiDefinition = OASParserUtil.getOASParser(swaggerDefinition);
-            Set<URITemplate> uriTemplates;
-            if (APIConstants.GRAPHQL_API.equals(api.getType())) {
-                uriTemplates = api.getUriTemplates();
-            } else {
-                uriTemplates = apiDefinition.getURITemplates(swaggerDefinition);
-            }
-
-            List<OperationDTO> operationsDTOList = new ArrayList<>();
-            if (!StringUtils.isEmpty(swaggerDefinition)) {
-                for (URITemplate uriTemplate : uriTemplates) {
-                    OperationDTO operationsDTO = getOperationFromURITemplate(uriTemplate, swaggerDefinition);
-                    operationsDTOList.add(operationsDTO);
+        List<OperationDTO> operationsDTOList = new ArrayList<>();
+        if (!"WS".equals(api.getType())) {
+            try {
+                String swaggerDefinition;
+                if (api.getSwaggerDefinition() != null) {
+                    swaggerDefinition = api.getSwaggerDefinition();
+                } else {
+                    swaggerDefinition = apiProvider.getOpenAPIDefinition(api.getId());
                 }
-            }
+                APIDefinition apiDefinition = OASParserUtil.getOASParser(swaggerDefinition);
+                Set<URITemplate> uriTemplates;
+                if (APIConstants.GRAPHQL_API.equals(api.getType())) {
+                    uriTemplates = api.getUriTemplates();
+                } else {
+                    uriTemplates = apiDefinition.getURITemplates(swaggerDefinition);
+                }
+
+                if (!StringUtils.isEmpty(swaggerDefinition)) {
+                    for (URITemplate uriTemplate : uriTemplates) {
+                        OperationDTO operationsDTO = getOperationFromURITemplate(uriTemplate, swaggerDefinition);
+                        operationsDTOList.add(operationsDTO);
+                    }
+                }
 //            Not available in 3.2.0
 //            setOperationPoliciesToOperationsDTO(api, operationsDTOList);
+                return operationsDTOList;
+            } catch (APIManagementException e) {
+                return null;
+            }
+        } else {
             return operationsDTOList;
-        } catch (APIManagementException e) {
-            return null;
         }
     }
 
@@ -196,12 +201,16 @@ public class APIDataTypeMapper {
 //        return dto;
 //    }
 
-    private List<String> getCategoryNames(List<APICategory> apiCategories) {
+    private List<CategoryDTO> getCategories(List<APICategory> apiCategories) {
 
-        List<String> categoryNames = new ArrayList<>();
+        List<CategoryDTO> categoryNames = new ArrayList<>();
         if (apiCategories != null && !apiCategories.isEmpty()) {
             for (APICategory category : apiCategories) {
-                categoryNames.add(category.getName());
+                CategoryDTO categoryDTO = new CategoryDTO();
+                categoryDTO.setName(category.getName());
+                categoryDTO.setDescription(category.getDescription());
+                categoryDTO.setOrganization(organization);
+                categoryNames.add(categoryDTO);
             }
         }
         return categoryNames;
@@ -275,9 +284,22 @@ public class APIDataTypeMapper {
         try {
             apiDefinition = apiProvider.getOpenAPIDefinition(api.getId());
         } catch (APIManagementException e) {
-            return apiDefinition;
+            //todo: handle exception
         }
         return apiDefinition;
+    }
+
+    private String getGraphqlSchemaFromAPI(API api) {
+        String graphqlSchema = "";
+        if (!APIConstants.GRAPHQL_API.equals(api.getType())) {
+            return graphqlSchema;
+        }
+        try {
+            graphqlSchema = apiProvider.getGraphqlSchema(api.getId());
+        } catch (APIManagementException e) {
+            //todo: handle exception
+        }
+        return graphqlSchema;
     }
 
     private String getThumbnail(API api) {
