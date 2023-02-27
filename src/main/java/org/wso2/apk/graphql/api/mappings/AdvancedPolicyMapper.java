@@ -50,7 +50,8 @@ public class AdvancedPolicyMapper {
             Set<String> policyNames = new HashSet<>();
             for (URITemplate uriTemplate : uriTemplates) {
                 String throttlingTier = uriTemplate.getThrottlingTier();
-                if (policyNames.contains(throttlingTier)) {
+                // Null check is added fo SOAP APIs
+                if (throttlingTier == null || policyNames.contains(throttlingTier)) {
                     continue;
                 }
                 for (Policy apiPolicy : apiPolicies) {

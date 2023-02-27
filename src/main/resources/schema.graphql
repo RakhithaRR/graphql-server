@@ -38,6 +38,7 @@ type API {
     endpointConfig: String
     definition: String
     graphQLSchema: String
+    wsdlDefinition: String
     thumbnail: String
     clientCertificates: [Certificate]
     endpointCertificates: [Certificate]
@@ -47,6 +48,7 @@ type API {
     mediationPolicies: [MediationPolicy]
     advancedPolicies: [AdvancedPolicy]
     designConfigurations: DesignConfiguration
+    security: [String]
 }
 
 type Operation {
@@ -56,6 +58,12 @@ type Operation {
     authTypeEnabled: Boolean
     usagePlan: String
     throttlingPolicy: String
+    resourceMediationPolicies: [ResourceMediation]
+}
+
+type ResourceMediation {
+    type: String
+    content: String
 }
 
 type Scope {

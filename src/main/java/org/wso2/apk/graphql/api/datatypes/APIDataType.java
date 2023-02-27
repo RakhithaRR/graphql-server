@@ -38,6 +38,8 @@ public class APIDataType {
     private List<AdvancedPolicyDTO> advancedPolicies;
     private String authorizationHeader;
     private DesignConfigDTO designConfigurations;
+    private List<String> security;
+    private String wsdlDefinition;
 
     public String getId() {
         return id;
@@ -293,5 +295,21 @@ public class APIDataType {
 
     public void setDesignConfigurations(DesignConfigDTO designConfigurations) {
         this.designConfigurations = designConfigurations;
+    }
+
+    public List<String> getSecurity() {
+        return security;
+    }
+
+    public void setSecurity(List<String> security) {
+        this.security = security;
+    }
+
+    public String getWsdlDefinition() {
+        return wsdlDefinition;
+    }
+
+    public void setWsdlDefinition(String wsdlDefinition) {
+        this.wsdlDefinition = wsdlDefinition;
     }
 }

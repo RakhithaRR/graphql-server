@@ -9,6 +9,7 @@ public class OperationDTO {
     private List<ScopeDTO> scopes;
     private String usagePlan;
     private String throttlingPolicy;
+    private List<OperationMediationDTO> resourceMediationPolicies;
 
     private OperationPoliciesDTO operationPolicies;
 
@@ -66,5 +67,13 @@ public class OperationDTO {
 
     public void setThrottlingPolicy(String throttlingPolicy) {
         this.throttlingPolicy = throttlingPolicy;
+    }
+
+    public List<OperationMediationDTO> getResourceMediationPolicies() {
+        return resourceMediationPolicies;
+    }
+
+    public void setResourceMediationPolicies(List<OperationMediationDTO> resourceMediationPolicies) {
+        this.resourceMediationPolicies = resourceMediationPolicies;
     }
 }

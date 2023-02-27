@@ -16,6 +16,7 @@ import org.wso2.carbon.apimgt.api.model.*;
 import org.wso2.carbon.apimgt.impl.APIConstants;
 import org.wso2.carbon.apimgt.impl.definitions.OASParserUtil;
 import org.wso2.carbon.apimgt.impl.utils.APIUtil;
+import org.wso2.carbon.apimgt.impl.wsdl.util.SequenceUtils;
 import org.wso2.carbon.apimgt.rest.api.util.RestApiConstants;
 import org.wso2.carbon.apimgt.rest.api.util.utils.RestApiUtil;
 
@@ -62,18 +63,12 @@ public class APIDataTypeMapper {
         apiDataType.setEndpointConfig(api.getEndpointConfig());
         // Not available in 3.2.0
         // apiDataType.setIsRevision(api.isRevision());
-
         apiDataType.setDescription(api.getDescription());
-        if (StringUtils.isEmpty(api.getTransports())) {
-            List<String> transports = new ArrayList<>();
-            transports.add(APIConstants.HTTPS_PROTOCOL);
-            apiDataType.setTransports(transports);
-        } else {
-            apiDataType.setTransports(Arrays.asList(api.getTransports().split(",")));
-        }
+        apiDataType.setTransports(getTransports(api));
         apiDataType.setTags(new ArrayList<>(api.getTags()));
         apiDataType.setOperations(getOperationsFromSwaggerDef(api));
         apiDataType.setAuthorizationHeader(api.getAuthorizationHeader());
+        apiDataType.setSecurity(Arrays.asList(api.getApiSecurity().split(",")));
         // Attributes required for Backoffice API
         apiDataType.setCategories(getCategories(api.getApiCategories()));
         apiDataType.setLifecycleStatus(api.getStatus());
@@ -90,6 +85,7 @@ public class APIDataTypeMapper {
         apiDataType.setMediationPolicies(mediationMapper.getMediationPolicies(api));
         apiDataType.setAdvancedPolicies(advancedPolicyMapper.getAdvancedPolicies(api));
         apiDataType.setGraphQLSchema(getGraphqlSchemaFromAPI(api));
+        apiDataType.setWsdlDefinition(getWsdlDefinition(api));
         apiDataType.setDesignConfigurations(getDesignConfigDetails(api));
 
         return apiDataType;
@@ -121,11 +117,28 @@ public class APIDataTypeMapper {
             }
 
             if (!StringUtils.isEmpty(swaggerDefinition)) {
-                for (URITemplate uriTemplate : uriTemplates) {
-                    OperationDTO operationsDTO = getOperationFromURITemplate(uriTemplate, swaggerDefinition);
-                    operationsDTOList.add(operationsDTO);
+                if (!APIConstants.API_TYPE_SOAPTOREST.equals(api.getType())) {
+                    for (URITemplate uriTemplate : uriTemplates) {
+                        OperationDTO operationsDTO = getOperationFromURITemplate(uriTemplate, swaggerDefinition);
+                        operationsDTOList.add(operationsDTO);
+                    }
+                } else {
+                    APIIdentifier apiIdentifier = api.getId();
+                    String soapToRestMediationIn = SequenceUtils
+                            .getRestToSoapConvertedSequence(apiIdentifier.getApiName(), apiIdentifier.getVersion(),
+                                    apiIdentifier.getProviderName(), APIConstants.API_CUSTOM_SEQUENCE_TYPE_IN);
+                    String soapToRestMediationOut = SequenceUtils
+                            .getRestToSoapConvertedSequence(apiIdentifier.getApiName(), apiIdentifier.getVersion(),
+                                    apiIdentifier.getProviderName(), APIConstants.API_CUSTOM_SEQUENCE_TYPE_OUT);
+                    for (URITemplate uriTemplate : uriTemplates) {
+                        OperationDTO operationsDTO = getOperationFromURITemplate(uriTemplate, swaggerDefinition);
+                        operationsDTO.setResourceMediationPolicies(getSoapToRestMediations(soapToRestMediationIn,
+                                soapToRestMediationOut, operationsDTO.getVerb(), operationsDTO.getTarget()));
+                        operationsDTOList.add(operationsDTO);
+                    }
                 }
             }
+
 //            Not available in 3.2.0
 //            setOperationPoliciesToOperationsDTO(api, operationsDTOList);
         } else {
@@ -152,6 +165,30 @@ public class APIDataTypeMapper {
         operationsDTO.setAuthTypeEnabled(!APIConstants.AUTH_NO_AUTHENTICATION.equals(uriTemplate.getAuthType()));
         operationsDTO.setThrottlingPolicy(uriTemplate.getThrottlingTier());
         return operationsDTO;
+    }
+
+    private List<OperationMediationDTO> getSoapToRestMediations(String soapToRestMediationIn,
+                                                                String soapToRestMediationOut,
+                                                                String verb, String path) {
+        List<OperationMediationDTO> operationMediationDTOList = new ArrayList<>();
+        String pathKey = path.substring(1) + "_" + verb.toLowerCase();
+        JsonObject soapToRestMediationInJson = JsonParser.parseString(soapToRestMediationIn).getAsJsonObject();
+        JsonObject mediationInfo = soapToRestMediationInJson.get(pathKey).getAsJsonObject();
+        if (mediationInfo != null) {
+            OperationMediationDTO operationMediationDTO = new OperationMediationDTO();
+            operationMediationDTO.setType(APIConstants.API_CUSTOM_SEQUENCE_TYPE_IN);
+            operationMediationDTO.setContent(mediationInfo.get("content").getAsString());
+            operationMediationDTOList.add(operationMediationDTO);
+        }
+        JsonObject soapToRestMediationOutJson = JsonParser.parseString(soapToRestMediationOut).getAsJsonObject();
+        mediationInfo = soapToRestMediationInJson.get(pathKey).getAsJsonObject();
+        if (mediationInfo != null) {
+            OperationMediationDTO operationMediationDTO = new OperationMediationDTO();
+            operationMediationDTO.setType(APIConstants.API_CUSTOM_SEQUENCE_TYPE_OUT);
+            operationMediationDTO.setContent(mediationInfo.get("content").getAsString());
+            operationMediationDTOList.add(operationMediationDTO);
+        }
+        return operationMediationDTOList;
     }
 
 //    Not available in 3.2.0
@@ -221,6 +258,16 @@ public class APIDataTypeMapper {
             }
         }
         return categoryNames;
+    }
+
+    private List<String> getTransports(API api) {
+        if (StringUtils.isEmpty(api.getTransports())) {
+            List<String> transports = new ArrayList<>();
+            transports.add(APIConstants.HTTPS_PROTOCOL);
+            return transports;
+        } else {
+            return Arrays.asList(api.getTransports().split(","));
+        }
     }
 
     private BusinessInformation mapBusinessInformation(API api) {
@@ -310,8 +357,22 @@ public class APIDataTypeMapper {
             byte[] bytes = IOUtils.toByteArray(thumbnailStream);
             base64EncodedThumbnail = Base64.getEncoder().encodeToString(bytes);
             return base64EncodedThumbnail;
-        } catch (Exception e) {
+        } catch (IOException e) {
             throw new APIManagementException("Error while getting thumbnail for API " + api.getId().getApiName(), e);
+        }
+    }
+
+    private String getWsdlDefinition(API api) throws APIManagementException {
+        if (api.getWsdlUrl() == null) {
+            return null;
+        }
+        ResourceFile wsdl = apiProvider.getWSDL(api.getId());
+        try {
+            InputStream wsdlStream = wsdl.getContent();
+            byte[] wsdlBytes = IOUtils.toByteArray(wsdlStream);
+            return Base64.getEncoder().encodeToString(wsdlBytes);
+        } catch (IOException e) {
+            throw new APIManagementException("Error while getting WSDL for API " + api.getId().getApiName(), e);
         }
     }
 
