@@ -72,7 +72,7 @@ type Scope {
     displayName: String
     description: String
     bindings: [String]
-    isShared: Boolean
+    shared: Boolean
 }
 
 type BusinessInformation {
@@ -169,7 +169,7 @@ type Condition {
     ipCondition: IPCondition
     headerCondition: HeaderCondition
     queryParameterCondition: QueryParameterCondition
-    jwtClaimCondition: JWTClaimCondition
+    jwtClaimsCondition: JWTClaimCondition
 }
 
 type IPCondition {
@@ -200,5 +200,5 @@ type DesignConfiguration {
     visibility: String
     visibleRoles: [String]
     visibleTenants: [String]
-    isDefaultVersion: Boolean
+    defaultVersion: Boolean
 }

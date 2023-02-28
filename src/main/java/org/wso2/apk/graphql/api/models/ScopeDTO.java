@@ -8,7 +8,7 @@ public class ScopeDTO {
     private String displayName;
     private String description;
     private List<String> bindings;
-    private boolean isShared;
+    private Boolean shared;
 
     public String getId() {
         return id;
@@ -50,11 +50,11 @@ public class ScopeDTO {
         this.bindings = bindings;
     }
 
-    public boolean isShared() {
-        return isShared;
+    public Boolean getShared() {
+        return shared;
     }
 
-    public void setShared(boolean shared) {
-        isShared = shared;
+    public void setShared(Boolean shared) {
+        this.shared = shared;
     }
 }

@@ -8,7 +8,7 @@ public class DesignConfigDTO {
     private String visibility;
     private List<String> visibleRoles;
     private List<String> visibleTenants;
-    private boolean isDefaultVersion;
+    private Boolean defaultVersion;
 
     public String getAccessControl() {
         return accessControl;
@@ -50,11 +50,11 @@ public class DesignConfigDTO {
         this.visibleTenants = visibleTenants;
     }
 
-    public boolean isDefaultVersion() {
-        return isDefaultVersion;
+    public Boolean getDefaultVersion() {
+        return defaultVersion;
     }
 
-    public void setDefaultVersion(boolean defaultVersion) {
-        isDefaultVersion = defaultVersion;
+    public void setDefaultVersion(Boolean defaultVersion) {
+        this.defaultVersion = defaultVersion;
     }
 }
