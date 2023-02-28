@@ -5,10 +5,10 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>org.wso2.apk</groupId>
-    <artifactId>graphql-api</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <artifactId>extractor</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
     <packaging>war</packaging>
-    <name>GraphQL API for Migration</name>
+    <name>Extractor for APK Migration</name>
 
     <parent>
         <groupId>org.wso2</groupId>
@@ -32,7 +32,7 @@
                             <targetPath>WEB-INF/classes</targetPath>
                         </resource>
                     </webResources>
-                    <warName>am#graphql#v1</warName>
+                    <warName>am#extractor#v1</warName>
                     <packagingExcludes>
                         WEB-INF/lib/tomcat*, WEB-INF/lib/pax*, WEB-INF/lib/xerces*, WEB-INF/lib/slf4j*
                     </packagingExcludes>

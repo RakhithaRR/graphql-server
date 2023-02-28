@@ -15,7 +15,7 @@
     <import resource="classpath:META-INF/cxf/cxf.xml"/>
     <import resource="classpath:META-INF/cxf/cxf-servlet.xml"/>
 
-    <bean id="gqlService" class="org.wso2.apk.graphql.api.GraphQLService" />
+    <bean id="gqlService" class="org.wso2.apk.extractor.GraphQLService" />
     <bean id="jsonProvider" class="com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider"/>
 
     <jaxrs:server id="graphqlRs" address="/">
