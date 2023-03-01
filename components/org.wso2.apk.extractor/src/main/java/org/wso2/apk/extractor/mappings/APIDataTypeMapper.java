@@ -55,48 +55,49 @@ public class APIDataTypeMapper {
 
 
     public APIDataType mapAPIToAPIDataType(ApiTypeWrapper wrapper) throws APIManagementException {
-        if (!wrapper.isAPIProduct()) {
-            API api = wrapper.getApi();
-            APIDataType apiDataType = new APIDataType();
-            // Attributes required for runtime API
-            apiDataType.setId(api.getUUID());
-            apiDataType.setName(api.getId().getName());
-            apiDataType.setVersion(api.getId().getVersion());
-            apiDataType.setContext(getContext(api.getContextTemplate()));
-            apiDataType.setProvider(api.getId().getProviderName());
-            apiDataType.setOrganization(organization);
-            apiDataType.setType(api.getType());
-            apiDataType.setEndpointConfig(api.getEndpointConfig());
-            // Not available in 3.2.0
-            // apiDataType.setIsRevision(api.isRevision());
-            apiDataType.setDescription(api.getDescription());
-            apiDataType.setTransports(commonMapper.getTransports(api.getTransports()));
-            apiDataType.setTags(new ArrayList<>(api.getTags()));
-            apiDataType.setOperations(getOperationsFromSwaggerDef(api));
-            apiDataType.setAuthorizationHeader(api.getAuthorizationHeader());
-            apiDataType.setSecurity(Arrays.asList(api.getApiSecurity().split(",")));
-            // Attributes required for Backoffice API
-            apiDataType.setCategories(commonMapper.getCategories(api.getApiCategories()));
-            apiDataType.setLifecycleStatus(api.getStatus());
-            apiDataType.setAdditionalProperties(api.getAdditionalProperties().toJSONString());
-            apiDataType.setDefinition(commonMapper.getAPIDefinition(api.getId()));
-            apiDataType.setBusinessInformation(mapBusinessInformation(api));
-            //getRevisionDetails(apiDataType, api.getUUID());
-            apiDataType.setDocuments(documentMapper.getDocumentationDetails(api));
-            apiDataType.setThumbnail(getThumbnail(api));
-            apiDataType.setClientCertificates(getClientCertificates(api));
-            apiDataType.setEndpointCertificates(getEndpointCertificates(api.getEndpointConfig()));
-            apiDataType.setComments(getComments(api.getUUID()));
-            apiDataType.setCorsConfiguration(getCorsConfiguration(api));
-            apiDataType.setMediationPolicies(mediationMapper.getMediationPolicies(api));
-            apiDataType.setAdvancedPolicies(advancedPolicyMapper.getAdvancedPolicies(api));
-            apiDataType.setGraphQLSchema(getGraphqlSchemaFromAPI(api));
-            apiDataType.setWsdlDefinition(getWsdlDefinition(api));
-            apiDataType.setDesignConfigurations(getDesignConfigDetails(api));
-
-            return apiDataType;
+        if (wrapper.isAPIProduct()) {
+            return productDataTypeMapper.mapProductToAPIDataType(wrapper.getApiProduct());
         }
-        return productDataTypeMapper.mapProductToAPIDataType(wrapper.getApiProduct());
+        API api = wrapper.getApi();
+        APIDataType apiDataType = new APIDataType();
+        // Attributes required for runtime API
+        apiDataType.setId(api.getUUID());
+        apiDataType.setName(api.getId().getName());
+        apiDataType.setVersion(api.getId().getVersion());
+        apiDataType.setContext(getContext(api.getContextTemplate()));
+        apiDataType.setProvider(api.getId().getProviderName());
+        apiDataType.setOrganization(organization);
+        apiDataType.setType(api.getType());
+        apiDataType.setEndpointConfig(api.getEndpointConfig());
+        // Not available in 3.2.0
+        // apiDataType.setIsRevision(api.isRevision());
+        apiDataType.setDescription(api.getDescription());
+        apiDataType.setTransports(commonMapper.getTransports(api.getTransports()));
+        apiDataType.setTags(new ArrayList<>(api.getTags()));
+        apiDataType.setOperations(getOperationsFromSwaggerDef(api));
+        apiDataType.setAuthorizationHeader(api.getAuthorizationHeader());
+        apiDataType.setSecurity(Arrays.asList(api.getApiSecurity().split(",")));
+        // Attributes required for Backoffice API
+        apiDataType.setCategories(commonMapper.getCategories(api.getApiCategories()));
+        apiDataType.setLifecycleStatus(api.getStatus());
+        apiDataType.setAdditionalProperties(api.getAdditionalProperties().toJSONString());
+        apiDataType.setDefinition(commonMapper.getAPIDefinition(api.getId()));
+        apiDataType.setBusinessInformation(mapBusinessInformation(api));
+        // Not available in 3.2.0
+        //getRevisionDetails(apiDataType, api.getUUID());
+        apiDataType.setDocuments(documentMapper.getDocumentationDetails(api));
+        apiDataType.setThumbnail(getThumbnail(api));
+        apiDataType.setClientCertificates(getClientCertificates(api));
+        apiDataType.setEndpointCertificates(getEndpointCertificates(api.getEndpointConfig()));
+        apiDataType.setComments(getComments(api.getUUID()));
+        apiDataType.setCorsConfiguration(getCorsConfiguration(api));
+        apiDataType.setMediationPolicies(mediationMapper.getMediationPolicies(api));
+        apiDataType.setAdvancedPolicies(advancedPolicyMapper.getAdvancedPolicies(api));
+        apiDataType.setGraphQLSchema(getGraphqlSchemaFromAPI(api));
+        apiDataType.setWsdlDefinition(getWsdlDefinition(api));
+        apiDataType.setDesignConfigurations(getDesignConfigDetails(api));
+
+        return apiDataType;
     }
 
     private String getContext(String context) {

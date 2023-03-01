@@ -5,7 +5,9 @@ import org.wso2.apk.extractor.models.DocumentDTO;
 import org.wso2.carbon.apimgt.api.APIManagementException;
 import org.wso2.carbon.apimgt.api.APIProvider;
 import org.wso2.carbon.apimgt.api.model.API;
+import org.wso2.carbon.apimgt.api.model.APIProduct;
 import org.wso2.carbon.apimgt.api.model.Documentation;
+import org.wso2.carbon.apimgt.api.model.Identifier;
 import org.wso2.carbon.apimgt.impl.utils.APIUtil;
 
 import java.io.IOException;
@@ -26,43 +28,48 @@ public class DocumentMapper {
         this.adminUsername = adminUsername;
     }
 
-    public List<DocumentDTO> getDocumentationDetails(API api) {
+    public List<DocumentDTO> getDocumentationDetails(API api) throws APIManagementException {
+        List<DocumentDTO> documentDTOList;
+        List<Documentation> documentationList = apiProvider.getAllDocumentation(api.getId(), organization);
+        documentDTOList = getDocumentationList(documentationList, api.getId());
+        return documentDTOList;
+    }
+
+    public List<DocumentDTO> getProductDocumentationDetails(APIProduct apiProduct) throws APIManagementException {
+        List<DocumentDTO> documentDTOList;
+        List<Documentation> documentationList = apiProvider.getAllDocumentation(apiProduct.getId());
+        documentDTOList = getDocumentationList(documentationList, apiProduct.getId());
+        return documentDTOList;
+    }
+
+    private List<DocumentDTO> getDocumentationList(List<Documentation> documentationList, Identifier identifier)
+            throws APIManagementException {
         List<DocumentDTO> documentDTOList = new ArrayList<>();
-        try {
-            List<Documentation> documentationList = apiProvider.getAllDocumentation(api.getId(), organization);
-
-            for (Documentation documentation : documentationList) {
-                DocumentDTO documentDTO = new DocumentDTO();
-                documentDTO.setDocumentId(documentation.getId());
-                documentDTO.setName(documentation.getName());
-                documentDTO.setSummary(documentation.getSummary());
-                documentDTO.setType(documentation.getType().toString());
-                documentDTO.setSourceType(documentation.getSourceType().toString());
-                documentDTO.setOtherTypeName(documentation.getOtherTypeName());
-                documentDTO.setSourceUrl(documentation.getSourceUrl());
-                documentDTO.setVisibility(documentation.getVisibility().toString());
-
-//                DocumentationContent documentationContent = apiProvider
-//                        .getDocumentationContent(apiId, documentation.getId(), organization);
-                String content = apiProvider.getDocumentationContent(api.getId(), documentation.getName());
-                if (Documentation.DocumentSourceType.INLINE.equals(documentation.getSourceType())
-                        || Documentation.DocumentSourceType.MARKDOWN.equals(documentation.getSourceType())) {
-                    if (content != null) {
-                        documentDTO.setInlineContent(content);
-                    }
+        for (Documentation documentation : documentationList) {
+            DocumentDTO documentDTO = new DocumentDTO();
+            documentDTO.setDocumentId(documentation.getId());
+            documentDTO.setName(documentation.getName());
+            documentDTO.setSummary(documentation.getSummary());
+            documentDTO.setType(documentation.getType().toString());
+            documentDTO.setSourceType(documentation.getSourceType().toString());
+            documentDTO.setOtherTypeName(documentation.getOtherTypeName());
+            documentDTO.setSourceUrl(documentation.getSourceUrl());
+            documentDTO.setVisibility(documentation.getVisibility().toString());
+            if (Documentation.DocumentSourceType.INLINE.equals(documentation.getSourceType())
+                    || Documentation.DocumentSourceType.MARKDOWN.equals(documentation.getSourceType())) {
+                String content = apiProvider.getDocumentationContent(identifier, documentation.getName());
+                if (content != null) {
+                    documentDTO.setInlineContent(content);
                 }
-                Map<String, Object> docResourceMap = APIUtil.getDocument(adminUsername, documentation.getFilePath(),
-                        organization);
-                if (Documentation.DocumentSourceType.FILE.equals(documentation.getSourceType())
-                        && !docResourceMap.isEmpty()) {
-                    InputStream contentStream = (InputStream) docResourceMap.get("Data");
-                    documentDTO.setFileName(getBase64EncodedDocument(contentStream));
-                }
-                documentDTOList.add(documentDTO);
             }
-        } catch (APIManagementException e) {
-            return documentDTOList;
-            // todo: handle exception
+            Map<String, Object> docResourceMap = APIUtil.getDocument(adminUsername, documentation.getFilePath(),
+                    organization);
+            if (Documentation.DocumentSourceType.FILE.equals(documentation.getSourceType())
+                    && !docResourceMap.isEmpty()) {
+                InputStream contentStream = (InputStream) docResourceMap.get("Data");
+                documentDTO.setFileName(getBase64EncodedDocument(contentStream));
+            }
+            documentDTOList.add(documentDTO);
         }
         return documentDTOList;
     }
