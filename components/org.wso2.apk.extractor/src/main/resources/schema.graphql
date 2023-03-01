@@ -17,6 +17,7 @@ type API {
     provider: String
     organization: String
     description: String
+    apiProduct: Boolean
     type: String
     transports: [String]
     hasThumbnail: Boolean

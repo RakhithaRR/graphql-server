@@ -40,6 +40,7 @@ public class APIDataType {
     private DesignConfigDTO designConfigurations;
     private List<String> security;
     private String wsdlDefinition;
+    private boolean apiProduct = false;
 
     public String getId() {
         return id;
@@ -311,5 +312,13 @@ public class APIDataType {
 
     public void setWsdlDefinition(String wsdlDefinition) {
         this.wsdlDefinition = wsdlDefinition;
+    }
+
+    public boolean isApiProduct() {
+        return apiProduct;
+    }
+
+    public void setApiProduct(boolean apiProduct) {
+        this.apiProduct = apiProduct;
     }
 }

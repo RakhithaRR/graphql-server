@@ -36,6 +36,8 @@ public class APIDataTypeMapper {
     private final ScopeMapper scopeMapper;
     private final MediationMapper mediationMapper;
     private final AdvancedPolicyMapper advancedPolicyMapper;
+    private final ProductDataTypeMapper productDataTypeMapper;
+    private final CommonMapper commonMapper;
 
     public APIDataTypeMapper(APIProvider apiProvider, String adminUsername, String organization)
             throws APIManagementException {
@@ -47,48 +49,54 @@ public class APIDataTypeMapper {
         this.scopeMapper = new ScopeMapper(apiProvider, organization);
         this.mediationMapper = new MediationMapper(apiProvider, adminUsername, organization, tenantId);
         this.advancedPolicyMapper = new AdvancedPolicyMapper(apiProvider, adminUsername, organization);
+        this.productDataTypeMapper = new ProductDataTypeMapper(apiProvider, adminUsername, organization);
+        this.commonMapper = new CommonMapper(apiProvider, organization);
     }
 
 
-    public APIDataType mapAPIToAPIDataType(API api) throws APIManagementException {
-        APIDataType apiDataType = new APIDataType();
-        // Attributes required for runtime API
-        apiDataType.setId(api.getUUID());
-        apiDataType.setName(api.getId().getName());
-        apiDataType.setVersion(api.getId().getVersion());
-        apiDataType.setContext(getContext(api.getContextTemplate()));
-        apiDataType.setProvider(api.getId().getProviderName());
-        apiDataType.setOrganization(organization);
-        apiDataType.setType(api.getType());
-        apiDataType.setEndpointConfig(api.getEndpointConfig());
-        // Not available in 3.2.0
-        // apiDataType.setIsRevision(api.isRevision());
-        apiDataType.setDescription(api.getDescription());
-        apiDataType.setTransports(getTransports(api));
-        apiDataType.setTags(new ArrayList<>(api.getTags()));
-        apiDataType.setOperations(getOperationsFromSwaggerDef(api));
-        apiDataType.setAuthorizationHeader(api.getAuthorizationHeader());
-        apiDataType.setSecurity(Arrays.asList(api.getApiSecurity().split(",")));
-        // Attributes required for Backoffice API
-        apiDataType.setCategories(getCategories(api.getApiCategories()));
-        apiDataType.setLifecycleStatus(api.getStatus());
-        apiDataType.setAdditionalProperties(api.getAdditionalProperties().toJSONString());
-        apiDataType.setDefinition(getAPIDefinition(api));
-        apiDataType.setBusinessInformation(mapBusinessInformation(api));
-//        getRevisionDetails(apiDataType, api.getUUID());
-        apiDataType.setDocuments(documentMapper.getDocumentationDetails(api));
-        apiDataType.setThumbnail(getThumbnail(api));
-        apiDataType.setClientCertificates(getClientCertificates(api));
-        apiDataType.setEndpointCertificates(getEndpointCertificates(api.getEndpointConfig()));
-        apiDataType.setComments(getComments(api.getUUID()));
-        apiDataType.setCorsConfiguration(getCorsConfiguration(api));
-        apiDataType.setMediationPolicies(mediationMapper.getMediationPolicies(api));
-        apiDataType.setAdvancedPolicies(advancedPolicyMapper.getAdvancedPolicies(api));
-        apiDataType.setGraphQLSchema(getGraphqlSchemaFromAPI(api));
-        apiDataType.setWsdlDefinition(getWsdlDefinition(api));
-        apiDataType.setDesignConfigurations(getDesignConfigDetails(api));
+    public APIDataType mapAPIToAPIDataType(ApiTypeWrapper wrapper) throws APIManagementException {
+        if (!wrapper.isAPIProduct()) {
+            API api = wrapper.getApi();
+            APIDataType apiDataType = new APIDataType();
+            // Attributes required for runtime API
+            apiDataType.setId(api.getUUID());
+            apiDataType.setName(api.getId().getName());
+            apiDataType.setVersion(api.getId().getVersion());
+            apiDataType.setContext(getContext(api.getContextTemplate()));
+            apiDataType.setProvider(api.getId().getProviderName());
+            apiDataType.setOrganization(organization);
+            apiDataType.setType(api.getType());
+            apiDataType.setEndpointConfig(api.getEndpointConfig());
+            // Not available in 3.2.0
+            // apiDataType.setIsRevision(api.isRevision());
+            apiDataType.setDescription(api.getDescription());
+            apiDataType.setTransports(commonMapper.getTransports(api.getTransports()));
+            apiDataType.setTags(new ArrayList<>(api.getTags()));
+            apiDataType.setOperations(getOperationsFromSwaggerDef(api));
+            apiDataType.setAuthorizationHeader(api.getAuthorizationHeader());
+            apiDataType.setSecurity(Arrays.asList(api.getApiSecurity().split(",")));
+            // Attributes required for Backoffice API
+            apiDataType.setCategories(commonMapper.getCategories(api.getApiCategories()));
+            apiDataType.setLifecycleStatus(api.getStatus());
+            apiDataType.setAdditionalProperties(api.getAdditionalProperties().toJSONString());
+            apiDataType.setDefinition(commonMapper.getAPIDefinition(api.getId()));
+            apiDataType.setBusinessInformation(mapBusinessInformation(api));
+            //getRevisionDetails(apiDataType, api.getUUID());
+            apiDataType.setDocuments(documentMapper.getDocumentationDetails(api));
+            apiDataType.setThumbnail(getThumbnail(api));
+            apiDataType.setClientCertificates(getClientCertificates(api));
+            apiDataType.setEndpointCertificates(getEndpointCertificates(api.getEndpointConfig()));
+            apiDataType.setComments(getComments(api.getUUID()));
+            apiDataType.setCorsConfiguration(getCorsConfiguration(api));
+            apiDataType.setMediationPolicies(mediationMapper.getMediationPolicies(api));
+            apiDataType.setAdvancedPolicies(advancedPolicyMapper.getAdvancedPolicies(api));
+            apiDataType.setGraphQLSchema(getGraphqlSchemaFromAPI(api));
+            apiDataType.setWsdlDefinition(getWsdlDefinition(api));
+            apiDataType.setDesignConfigurations(getDesignConfigDetails(api));
 
-        return apiDataType;
+            return apiDataType;
+        }
+        return productDataTypeMapper.mapProductToAPIDataType(wrapper.getApiProduct());
     }
 
     private String getContext(String context) {
@@ -181,7 +189,7 @@ public class APIDataTypeMapper {
             operationMediationDTOList.add(operationMediationDTO);
         }
         JsonObject soapToRestMediationOutJson = JsonParser.parseString(soapToRestMediationOut).getAsJsonObject();
-        mediationInfo = soapToRestMediationInJson.get(pathKey).getAsJsonObject();
+        mediationInfo = soapToRestMediationOutJson.get(pathKey).getAsJsonObject();
         if (mediationInfo != null) {
             OperationMediationDTO operationMediationDTO = new OperationMediationDTO();
             operationMediationDTO.setType(APIConstants.API_CUSTOM_SEQUENCE_TYPE_OUT);
@@ -245,31 +253,6 @@ public class APIDataTypeMapper {
 //        return dto;
 //    }
 
-    private List<CategoryDTO> getCategories(List<APICategory> apiCategories) {
-
-        List<CategoryDTO> categoryNames = new ArrayList<>();
-        if (apiCategories != null && !apiCategories.isEmpty()) {
-            for (APICategory category : apiCategories) {
-                CategoryDTO categoryDTO = new CategoryDTO();
-                categoryDTO.setName(category.getName());
-                categoryDTO.setDescription(category.getDescription());
-                categoryDTO.setOrganization(organization);
-                categoryNames.add(categoryDTO);
-            }
-        }
-        return categoryNames;
-    }
-
-    private List<String> getTransports(API api) {
-        if (StringUtils.isEmpty(api.getTransports())) {
-            List<String> transports = new ArrayList<>();
-            transports.add(APIConstants.HTTPS_PROTOCOL);
-            return transports;
-        } else {
-            return Arrays.asList(api.getTransports().split(","));
-        }
-    }
-
     private BusinessInformation mapBusinessInformation(API api) {
 
         BusinessInformation businessInformation = new BusinessInformation();
@@ -332,10 +315,6 @@ public class APIDataTypeMapper {
 //            // todo: handle exception
 //        }
 //    }
-
-    private String getAPIDefinition(API api) throws APIManagementException {
-        return apiProvider.getOpenAPIDefinition(api.getId());
-    }
 
     private String getGraphqlSchemaFromAPI(API api) throws APIManagementException {
         String graphqlSchema = "";

@@ -6,6 +6,9 @@ import org.wso2.apk.extractor.mappings.APIDataTypeMapper;
 import org.wso2.apk.extractor.utils.CommonUtils;
 import org.wso2.carbon.apimgt.api.APIManagementException;
 import org.wso2.carbon.apimgt.api.model.API;
+import org.wso2.carbon.apimgt.api.model.APIProduct;
+import org.wso2.carbon.apimgt.api.model.ApiTypeWrapper;
+import org.wso2.carbon.apimgt.impl.APIConstants;
 import org.wso2.carbon.apimgt.rest.api.util.utils.RestApiUtil;
 import org.wso2.carbon.apimgt.api.APIProvider;
 import org.wso2.carbon.user.api.Tenant;
@@ -27,8 +30,16 @@ public class APIService {
                     organizationName);
             List<API> apis = apiProvider.getAllAPIs();
             for (API api : apis) {
-                API detailedAPI = apiProvider.getAPIbyUUID(api.getUUID(), organizationName);
-                apiList.add(apiDataTypeMapper.mapAPIToAPIDataType(detailedAPI));
+                if (APIConstants.API_PRODUCT.equalsIgnoreCase(api.getType())) {
+                    APIProduct detailedAPIProduct = apiProvider.getAPIProductbyUUID(api.getUUID(), organizationName);
+                    ApiTypeWrapper apiTypeWrapper = new ApiTypeWrapper(detailedAPIProduct);
+                    apiList.add(apiDataTypeMapper.mapAPIToAPIDataType(apiTypeWrapper));
+                } else {
+                    API detailedAPI = apiProvider.getAPIbyUUID(api.getUUID(), organizationName);
+                    ApiTypeWrapper apiTypeWrapper = new ApiTypeWrapper(detailedAPI);
+                    apiList.add(apiDataTypeMapper.mapAPIToAPIDataType(apiTypeWrapper));
+                }
+
             }
         }
         apiListDTO.setCount(apiList.size());
@@ -51,8 +62,15 @@ public class APIService {
                     organizationName);
             List<API> apis = apiProvider.getAllAPIs();
             for (API api : apis) {
-                API detailedAPI = apiProvider.getAPIbyUUID(api.getUUID(), organizationName);
-                apiList.add(apiDataTypeMapper.mapAPIToAPIDataType(detailedAPI));
+                if (APIConstants.API_PRODUCT.equalsIgnoreCase(api.getType())) {
+                    APIProduct detailedAPIProduct = apiProvider.getAPIProductbyUUID(api.getUUID(), organizationName);
+                    ApiTypeWrapper apiTypeWrapper = new ApiTypeWrapper(detailedAPIProduct);
+                    apiList.add(apiDataTypeMapper.mapAPIToAPIDataType(apiTypeWrapper));
+                } else {
+                    API detailedAPI = apiProvider.getAPIbyUUID(api.getUUID(), organizationName);
+                    ApiTypeWrapper apiTypeWrapper = new ApiTypeWrapper(detailedAPI);
+                    apiList.add(apiDataTypeMapper.mapAPIToAPIDataType(apiTypeWrapper));
+                }
             }
         }
         apiListDTO.setCount(apiList.size());
@@ -66,7 +84,8 @@ public class APIService {
             APIProvider apiProvider = RestApiUtil.getProvider("admin");
             API api = apiProvider.getAPIbyUUID(id, "carbon.super");
             APIDataTypeMapper apiDataTypeMapper = new APIDataTypeMapper(apiProvider, "admin", "carbon.super");
-            return apiDataTypeMapper.mapAPIToAPIDataType(api);
+            ApiTypeWrapper apiTypeWrapper = new ApiTypeWrapper(api);
+            return apiDataTypeMapper.mapAPIToAPIDataType(apiTypeWrapper);
         } catch (APIManagementException e) {
             return null;
         }
