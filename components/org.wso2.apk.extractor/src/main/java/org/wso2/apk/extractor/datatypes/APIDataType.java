@@ -41,6 +41,7 @@ public class APIDataType {
     private List<String> security;
     private String wsdlDefinition;
     private boolean apiProduct = false;
+    private List<ProductAPIDTO> productAPIs;
 
     public String getId() {
         return id;
@@ -320,5 +321,13 @@ public class APIDataType {
 
     public void setApiProduct(boolean apiProduct) {
         this.apiProduct = apiProduct;
+    }
+
+    public List<ProductAPIDTO> getProductAPIs() {
+        return productAPIs;
+    }
+
+    public void setProductAPIs(List<ProductAPIDTO> productAPIs) {
+        this.productAPIs = productAPIs;
     }
 }

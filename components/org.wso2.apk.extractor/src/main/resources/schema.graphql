@@ -50,6 +50,7 @@ type API {
     advancedPolicies: [AdvancedPolicy]
     designConfigurations: DesignConfiguration
     security: [String]
+    productAPIs: [ProductAPI]
 }
 
 type Operation {
@@ -202,4 +203,11 @@ type DesignConfiguration {
     visibleRoles: [String]
     visibleTenants: [String]
     defaultVersion: Boolean
+}
+
+type ProductAPI {
+    uuid: String
+    name: String
+    version: String
+    operations: [Operation]
 }

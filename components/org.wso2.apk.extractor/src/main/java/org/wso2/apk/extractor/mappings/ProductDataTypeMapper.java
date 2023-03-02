@@ -2,20 +2,18 @@ package org.wso2.apk.extractor.mappings;
 
 import org.apache.commons.io.IOUtils;
 import org.wso2.apk.extractor.datatypes.APIDataType;
-import org.wso2.apk.extractor.models.BusinessInformation;
-import org.wso2.apk.extractor.models.DesignConfigDTO;
+import org.wso2.apk.extractor.models.*;
 import org.wso2.carbon.apimgt.api.APIManagementException;
 import org.wso2.carbon.apimgt.api.APIProvider;
-import org.wso2.carbon.apimgt.api.model.API;
-import org.wso2.carbon.apimgt.api.model.APIProduct;
-import org.wso2.carbon.apimgt.api.model.ResourceFile;
+import org.wso2.carbon.apimgt.api.dto.ClientCertificateDTO;
+import org.wso2.carbon.apimgt.api.model.*;
+import org.wso2.carbon.apimgt.impl.APIConstants;
 import org.wso2.carbon.apimgt.impl.utils.APIUtil;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Base64;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class ProductDataTypeMapper {
     private final String organization;
@@ -56,8 +54,65 @@ public class ProductDataTypeMapper {
         apiDataType.setThumbnail(getThumbnail(product));
         apiDataType.setDesignConfigurations(getDesignConfigDetails(product));
         apiDataType.setDocuments(documentMapper.getProductDocumentationDetails(product));
+        apiDataType.setClientCertificates(getClientCertificates(product));
+        apiDataType.setProductAPIs(getProductAPIsAndResources(product));
 
         return apiDataType;
+    }
+
+    private List<ProductAPIDTO> getProductAPIsAndResources(APIProduct product) {
+        Map<String, ProductAPIDTO> aggregatedAPIs = new HashMap<String, ProductAPIDTO>();
+        List<APIProductResource> resources = product.getProductResources();
+        for (APIProductResource apiProductResource : resources) {
+            String uuid = apiProductResource.getApiId();
+            URITemplate uriTemplate = apiProductResource.getUriTemplate();
+            if (aggregatedAPIs.containsKey(uuid)) {
+                ProductAPIDTO productAPIDTO = aggregatedAPIs.get(uuid);
+                List<OperationDTO> operations = productAPIDTO.getOperations();
+                operations.add(getOperationFromURITemplate(uriTemplate));
+            }
+            ProductAPIDTO productAPIDTO = new ProductAPIDTO();
+            List<OperationDTO> operations = new ArrayList<>();
+            productAPIDTO.setUuid(uuid);
+            productAPIDTO.setName(apiProductResource.getApiIdentifier().getName());
+            productAPIDTO.setVersion(apiProductResource.getApiIdentifier().getVersion());
+            operations.add(getOperationFromURITemplate(uriTemplate));
+            productAPIDTO.setOperations(operations);
+            aggregatedAPIs.put(uuid, productAPIDTO);
+        }
+        return new ArrayList<>(aggregatedAPIs.values());
+    }
+
+    private OperationDTO getOperationFromURITemplate(URITemplate uriTemplate) {
+        OperationDTO operationDTO = new OperationDTO();
+        operationDTO.setVerb(uriTemplate.getHTTPVerb());
+        operationDTO.setTarget(uriTemplate.getUriTemplate());
+        operationDTO.setAuthTypeEnabled(!APIConstants.AUTH_NO_AUTHENTICATION.equals(uriTemplate.getAuthType()));
+        operationDTO.setThrottlingPolicy(uriTemplate.getThrottlingTier());
+        operationDTO.setScopes(uriTemplate.retrieveAllScopes()
+                .stream()
+                .map(Scope -> {
+                    ScopeDTO scopeDTO = new ScopeDTO();
+                    scopeDTO.setName(Scope.getKey());
+                    return scopeDTO;
+                })
+                .collect(Collectors.toList()));
+        return operationDTO;
+    }
+
+    private List<CertificateDTO> getClientCertificates(APIProduct product) throws APIManagementException {
+        List<CertificateDTO> certificateDTOList = new ArrayList<>();
+        List<ClientCertificateDTO> certificates = apiProvider.searchClientCertificates(tenantId, null,
+                product.getId());
+        for (ClientCertificateDTO certificate : certificates) {
+            CertificateDTO certificateDTO = new CertificateDTO();
+            certificateDTO.setAlias(certificate.getAlias());
+            certificateDTO.setApiId(certificate.getApiIdentifier().getUUID());
+            certificateDTO.setCertificate(certificate.getCertificate());
+            certificateDTO.setTierName(certificate.getTierName());
+            certificateDTOList.add(certificateDTO);
+        }
+        return certificateDTOList;
     }
 
     private BusinessInformation mapBusinessInformation(APIProduct product) {
