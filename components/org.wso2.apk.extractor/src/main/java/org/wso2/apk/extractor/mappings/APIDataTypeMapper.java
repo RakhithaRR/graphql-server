@@ -1,5 +1,6 @@
 package org.wso2.apk.extractor.mappings;
 
+import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import org.apache.commons.io.IOUtils;
@@ -19,6 +20,8 @@ import org.wso2.carbon.apimgt.impl.utils.APIUtil;
 import org.wso2.carbon.apimgt.impl.wsdl.util.SequenceUtils;
 import org.wso2.carbon.apimgt.rest.api.util.RestApiConstants;
 import org.wso2.carbon.apimgt.rest.api.util.utils.RestApiUtil;
+import org.wso2.carbon.core.util.CryptoException;
+import org.wso2.carbon.core.util.CryptoUtil;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -68,7 +71,7 @@ public class APIDataTypeMapper {
         apiDataType.setProvider(api.getId().getProviderName());
         apiDataType.setOrganization(organization);
         apiDataType.setType(api.getType());
-        apiDataType.setEndpointConfig(api.getEndpointConfig());
+        apiDataType.setEndpointConfig(EndpointConfigMapper.processEndpointConfig(api.getEndpointConfig()));
         // Not available in 3.2.0
         // apiDataType.setIsRevision(api.isRevision());
         apiDataType.setDescription(api.getDescription());
